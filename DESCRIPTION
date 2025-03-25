@@ -1,0 +1,11 @@
+Package: RTutorMinoritySalience
+Type: Package
+Title: RTutor problem set MinoritySalience
+Version: 0.1
+Date: 2025-25-03
+Author: Lukas Mueller
+Maintainer: Lukas Mueller <lukas-1.mueller@uni-ulm.de>
+Description: RTutor Problem Set - Minority Salience and Political Extremism
+License: Problem set content: Creative Commons (CC BY-SA)
+	 Package code: GPL >= 2.0
+Depends: RTutor, ggplot2, dplyr, tidyverse, ggpubr, stargazer, lfe, dagitty, ggdag, kableExtra, haven

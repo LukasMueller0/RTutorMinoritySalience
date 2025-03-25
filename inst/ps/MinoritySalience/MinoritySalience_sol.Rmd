@@ -1,0 +1,2036 @@
+#< ignore
+```{r "0_1"}
+library(RTutor)
+setwd("D:/RTutorProblemSet")
+
+ps.name = "MinoritySalience"
+sol.file = paste0(ps.name,"_sol.Rmd")
+libs = c("ggplot2", "dplyr", "tidyverse", "ggpubr", "stargazer", "lfe", "dagitty", "ggdag", "kableExtra", "haven")
+
+name.rmd.chunks(sol.file)
+create.ps(sol.file = sol.file, ps.name= ps.name, libs=libs, addons = "quiz")
+
+# This function creates a skeleton for your problem set package
+  rtutor.package.skel(sol.file=sol.file, ps.name=ps.name,libs=libs,
+    pkg.name="RTutorMinoritySalience",   # Name of the problem set package
+    pkg.parent.dir = "D:/RTutorProblemSet/RTutorMinoritySalience", # Parent directory 
+    author="Lukas Mueller", # Your name
+    github.user="LukasMueller0",     # Your github user name
+    extra.code.file=NULL, # name of extra.code.file
+    var.txt.file=NULL,    # name of var.txt.file
+    overwrite=FALSE  # Do you want to override if package directory exists?
+  )
+  
+#Show PS
+
+show.ps(ps.name,sample.solution=FALSE,auto.save.code = TRUE)
+```
+#>
+
+## Exercise  Overview
+
+### Minority Salience and Political Extremism - An Interactive Analysis with R
+
+**Welcome!** You are about to begin this problem set, which is part of my bachelor thesis at Ulm University. In this problem set, we will examine how the salience of minorities influences both voting patterns and political extremism. The analysis is based on the paper "Minority Salience and Political Extremism" from Tommaso Colussi, Ingo E. Isphording and Nico Pestel which was published in the American Economic Journal: Applied Economics in 2021. The paper itself and supplementary materials can be accessed via this [Link](https://www.aeaweb.org/articles?id=10.1257/app.20190703).
+
+As of 2024, European right-wing parties are on the rise. In countries like Hungary, Italy, and the Netherlands, they have already achieved significant success in elections and are now even part of governing coalitions. In Germany, the right is represented by the Alternative für Deutschland (AfD), currently capturing between 17% and 19% of the voter share in federal elections, depending on the survey (Brandt, M., 2024, 16. December) [SOURCE](https://de.statista.com/infografik/7930/sonntagsfrage-bundestagswahl/). 
+
+2024 is especially interesting as it is the last year before the next federal elections, and it also includes the European elections and state elections in Thuringia, Brandenburg, and Saxony. In Thuringia, the AfD achieved a historic success, becoming the party with the largest share of votes for the first time, securing 32.8% of the voting share (tagesschau.de, 2024, 1. September)  [SOURCE](https://www.tagesschau.de/wahl/archiv/2024-09-01-LT-DE-TH/). During the European elections, it was also observed that many young citizens chose to vote for the AfD, leading to an 11 percentage point increase in the voting share among 16 to 24-year-olds. One reason for this observation might be the fact that 69% of people in the 16 to 34-year-old age group are concerned about a future rise in criminal activity (Schairer, F., Possoch, D. & Feininger A., 2024, 15. June) [SOURCE](https://www.br.de/nachrichten/deutschland-welt/europawahl-rechtsruck-warum-waehlen-junge-leute-afd,UFaES3P).
+
+One driving force of this trend could be the agenda of right-wing parties to increase anti-minority sentiment and instill fear against minorities by claiming that unregulated migration leads to higher crime rates and violence.
+
+In this problem set we will therefore investigate the relationship between the salience of Muslim communities during Ramadan and political extremism. We will do this by leveraging the idiosyncratic variation in the timing of Ramadan in relation to elections, facilitated by the cyclical nature of Ramadan.
+
+In literature there are 2 main arguments that support this relationship:
+
+* Minorities that are perceived as out-groups can lead to an increase in in-group favoritism.
+
+* By becoming more salient, attention is drawn to related topics like cultural adaption, immigration and identity.
+
+The main objective of the paper underlying this problem set is to empirically validate these theories and analyze the effect-sizes of this relationship. 
+
+### Content
+
+* Overview
+* Descriptive Statistics
+* The Effect of Salience on Voting Behavior
+* Introducing the Difference-in-Differences Approach
+* Calculating the DiD Estimator with linear regression
+* Adding Fixed Effects to our model
+* Introducing Time-Variant Control Variables into the Model
+* Interpreting the Results
+* Dynamic Effects of Voting Behavior and Hate Crimes
+* Conclusion
+* Appendix
+* References
+
+This problem set consists of theoretical principles, code chunks, info boxes, and quizzes. To solve a task, you will enter some R code into the chunks. After editing the chunk, you have to press check in order to get feedback on whether your solution is correct. Every time you start a new exercise you have to press edit first. If you need further advice, press the hint button for more detailed information or some hints. In case this does not help you, you can always try to find the solution via Google or just access the solution with the solution button. The info boxes provide you with background information and additional comments. Quizzes are included to test your newly acquired knowledge. For a choice of code chunks and quizzes that you solved successfully, you will get awards. You don’t have to work through the chapters in the prescribed order but it helps since they build on each other.
+
+Have fun solving the tasks and collecting awards!
+
+## Exercise 1 -- Descriptive Statistics
+
+In Chapter 1 of this problem set we will take a look at the data set <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">NRW_final.rds</span>. This data set will be later used to replicate the main analysis of the original paper. 
+We begin our analysis by examining the structure of the data set and the variables it contains. Next, we calculate descriptive statistics for different subsets of the data to identify any potential imbalances within the data.      
+
+**<span style="color: orange;">Task</span>**: Let's start by loading the file <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">NRW_final.rds</span> into the variable <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">NRW</span>. You can use the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">readRDS()</span> function to complete the task.
+
+```{r "2_1"}
+#< task
+
+#>
+
+NRW <- readRDS("NRW_final.rds")
+```
+
+### Data
+
+Now that we have loaded the data, we first want to get an overview over the different variables contained in the data set. We can use the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">head()</span> function, which is part of R, to display the first six rows of our data set.
+
+**<span style="color: orange;">Task</span>**: Make use of the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">head()</span> function to show the head of the data set. 
+
+```{r "2_2"}
+#< task
+
+#>
+
+head(NRW)
+```
+
+#< quiz "Number of variables"
+question: Well done! Let's continue the analysis with a little quiz. What is the total number of variables within the data set?
+answer: 15
+roundto: 1
+#>
+
+You're correct! The data set consists of 15 variables and 7128 observations, providing information at the municipality level for 18 federal and state elections in the state of North Rhine-Westphalia. Our main analysis focuses on North Rhine-Westphalia, as it currently houses 1.5 million Muslims, making it the German state with the largest Muslim population. 
+
+**<span style="color: orange;">Task</span>**: Now we are interested in determining the time span included in the data set. To identify the earliest and latest years in the data set, you can use the functions <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">min()</span> and <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">max()</span> to find the minimum and maximum years present in the data, respectively.
+
+```{r "2_3"}
+#< fill_in
+___(NRW$year)
+___(NRW$year)
+#>
+max(NRW$year)
+min(NRW$year)
+
+```
+
+Great! Now that we know that the data spans from 1980 to 2013 and includes election results for different municipalities in NRW, we can categorize the type of data for our analysis. 
+Let's break down the four possible data types:
+
+**Time Series Data**
+
+This type of data focuses on observing a single unit over time. For example, the unit could be an individual, where we track blood pressure measurements over several years, or it could be a school, where we monitor the number of students over a specific period. In our case, the unit of observation would be a single municipality in NRW, where we track election results over time.
+
+**Cross-Sectional Data**
+
+In this data type, we no longer observe a unit over a time span. Instead, we measure several variables of a single unit at a specific point in time. For example, in the context of schools, this would involve measuring the number of students enrolled and other relevant metrics for School A in the year 2024. This approach provides a snapshot of the unit's characteristics at that moment, rather than tracking changes over time.
+
+**Panel Data**
+
+The key characteristic of panel data is that it combines time series data with multiple units, allowing us to measure various variables across these units. Returning to our school example, this means we can observe different classes within the school over the years and measure metrics such as student numbers and average grades. In our case, this approach applies to all municipalities in NRW over the specified period from 1980 to 2013.
+
+**Pooled Cross-Sectional Data**
+
+The last data type is quite similar to panel data, with the key distinction that we do not necessarily observe the same units over time. The units included can vary, meaning that, for our school example, we might switch from observing Schools A and B during one part of the time period to Schools C and D in another. This flexibility allows for a broader analysis but also means that the comparisons may not always be consistent across the entire time horizon.
+
+Let's put your knowledge to the test with a quick quiz!
+
+#< quiz "Data type"
+question: Which data type fits best with the data set NRW?
+sc: 
+    - Time Series Data
+    - Cross-Sectional Data
+    - Panel Data*
+    - Pooled Cross-Sectional Data
+success: Good job!
+failure: Try again.
+
+#>
+
+Indeed, in our example, we are using panel data. This is because we observe and measure different variables for several municipalities (units) that remain the same over the years. By keeping the same municipalities throughout the time period, we can analyze how each one's characteristics and election results change over different election years.
+
+Now, let's take a closer look at the individual variables included in the data set and the type of information they provide. To better understand their role in our analysis, we can generally categorize these variables into three distinct groups based on the type of information they contain:
+
+**Information about the elections**
+
+In total, seven variables contain information about the different elections throughout the years. These variables are <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">date_election</span>, <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">year</span>, <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">election_type</span>, <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">right</span>, <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">left</span>, <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">establish</span> and <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">turnout</span>. 
+The initial three variables inform us about the specific date and year of the election, as well as the type of election. The variables <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">right</span>, <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">left</span>, <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">establish</span> and <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">turnout</span> store the voting shares for the different groups of political parties and the voter turnout for the specific election. 
+Now the question arises: Which parties are associated with the three different political ideologies? To answer that question, refer to the table below. 
+
+**<span style="color: orange;">Task</span>**: Press the check button to run the code chunk below and show the table. The look of the table is improved with the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">kableExtra</span> package. For more information, take a look inside the info box.  
+
+```{r "2_4"}
+#< task_notest
+Parties <- readRDS("Parties.rds")
+Parties %>% kbl() %>%
+  kable_styling()
+#>
+```
+
+A quick look at the table reveals that the parties categorized under the "Right" group include several that are classified as right-wing extremist. One notable example is the NPD (National Democratic Party of Germany), which faced two prohibition proceedings—in 2001 and 2013—both of which were unsuccessful. However, during the second proceeding, the judges noted the NPD's affinity for national socialism, as well as its anti-democratic and racist ideology (Bundeszentrale für politische Bildung, 2024, 27. December) [SOURCE](https://www.bpb.de/themen/rechtsextremismus/dossier-rechtsextremismus/500796/nationaldemokratische-partei-deutschlands-npd/). This party exemplifies the far-right tendencies within this category. Additionally, more localized right-wing groups, such as ProNRW and ProDEU, which operate primarily in North Rhine-Westphalia, are also included in this group. These organizations have been deemed unconstitutional, primarily due to their disregard for basic human rights anchored in the German constitution and their promotion of increasing anti-minority sentiments, particularly targeting Muslims, asylum seekers, and Sinti and Roma  populations (Verfassungsschutz Nordrhein-Westfalen, 2015, May) [SOURCE](https://www.land.nrw/sites/default/files/asset/document/vs-bericht_2014_final.pdf).
+
+In contrast, the established parties belong to the democratic center and have a long-standing history in the German party system. This group includes parties that span a spectrum of ideologies, from more conservative groups like the CDU (Christian Democratic Union) to more left-leaning ones like the SPD (Social Democratic Party of Germany). The "Left" group similarly encompasses a wide range of ideologies, from extreme left-wing entities such as the KPD (Communist Party of Germany), which was banned, and its successor, the DKP (German Communist Party), to more moderate left-wing parties like DIE LINKE, which is currently represented in the German parliament (Bundeszentrale für politische Bildung, 2024, 27. December) [SOURCE](https://www.bpb.de/kurz-knapp/lexika/politiklexikon/17728/kommunistische-partei-deutschlands-kpd/).
+
+In summary, both the "Right" and "Left" groups contain parties with extremist and anti-democratic positions, highlighting their divergence from democratic norms. On the other hand, the "Established" category is composed of parties with a solid democratic foundation and a history of avoiding extreme political views, as their name implies.
+
+These variables will later be used as dependent variables in the main part of the analysis. 
+
+#! start_note "kableExtra"
+The <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">kableExtra</span> package allows you to customize the appearance of your tables. To use the package, you first need to use the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">kbl()</span> function. Afterwards, you can add more layers, like <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">kable_classic()</span> or <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">kable_styling()</span>, to improve your table's appearance and produce your desired output.
+
+If you want to learn more about the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">kableExtra</span> package and the broad functionalities it offers to improve your tables, you can follow this link and read through the article [SOURCE](https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html).
+
+#! end_note
+
+**Municipality Characteristics**
+
+The variables <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">district_name</span>, <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">dummy_mosque</span>, <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">share_female</span>, <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">share_foreign</span>, <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">pop_density</span> and <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">log_emp</span> indicate the municipality where the election occurred. Additionally, the variable <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">dummy_mosque</span> is a binary variable, that switches to 1 if a mosque is present in the municipality. The remaining six variables provide general information about the municipality, such as the share of women and population density.
+
+#! start_note "Definition of the dummy_mosque variable"
+The variable <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">dummy_mosque</span> only considers mosques, which  are visually identifiable as such, including those with a minaret and a dome. 
+Out of the 2800 mosques in Germany, only around 10% meet these criteria.
+#! end_note
+
+**Information about Ramadan**
+
+At last we have the variables <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">ramadan_start</span> and <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">distance_ramadan</span>. The first variable represents the starting date of Ramadan for the current year, while the second variable denotes the number of days passend since the last Ramadan.
+
+### Descriptive Statistics
+
+Now that we have a clear understanding of the variables in the data set and what they measure, it is essential to examine some key statistics.
+To begin, let’s review the mean and standard deviation for all variables. These metrics offer valuable insights into the distribution and overall characteristics of the data, enabling us to detect any notable trends or anomalies.
+
+If you are not familiar with the standard deviation, you can take a look at the info box.
+
+#! start_note "Standard deviation"
+
+The standard deviation is a statistical measure used to assess the variation of data points within a data set. It quantifies the average distance of each data point from the mean of the data set. To calculate the standard deviation, the difference between each data point and the mean is first determined, and then these differences are squared to avoid negative values canceling each other out. The squared differences are averaged (typically by dividing by the number of data points minus one), and finally, the square root of this average is taken. This process results in the standard deviation, which reflects how much the data points deviate from the mean on average.
+
+The standard deviation can be interpreted as follows: A low standard deviation indicates that the data points are generally close to the mean, suggesting that the values are relatively consistent and clustered. In contrast, a high standard deviation means that the data points are spread out over a wider range, indicating greater variability within the data set.
+
+$$
+\text{Standard deviation} = \sqrt{\frac{1}{n}\sum_{i=1}^{n}(x_i - \overline{x})^2}
+$$
+
+#! end_note
+
+**<span style="color: orange;">Task</span>**: To take a quick view at the descriptive statistics you can press the check button to load the dataset <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">NRW_statistics.rds</span>. This pre-made dataset contains the means and standard deviations for the variables of interest included in the NRW data. It is divided into three sections, allowing you to examine the metrics for all municipalities, only those with a mosque, and only those without a mosque. Additionally, the code utilizes the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">kableExtra</span> package to enhance the aesthetics of the resulting tables.
+
+```{r "2_5"}
+#< task_notest
+descriptive_statistics <- readRDS("NRW_statistics.rds")
+
+descriptive_statistics %>%
+  kbl() %>%
+  kable_styling(full_width = FALSE) %>%
+  add_header_above(c(" " = 1, "All Municipalities in NRW" = 2, "Municipalities with a Mosque" = 2, "Municipalities without a Mosque" = 2)) %>%
+  group_rows("Municipality Variables", 1, 4) %>%
+  group_rows("Election Results", 5, 8) %>%
+  row_spec(5:8, background = "#f0f0f0")
+
+#>
+```
+
+#< quiz "Group size"
+question: Looking at the table, do you think the data set contains more observations of municipalities with a mosque or without a mosque?
+sc: 
+    - The data set contains the same number of observations of municipalities with a mosque and without a mosque.
+    - The number of observations of municipalities with a mosque is larger.
+    - The number of observations of municipalities without a mosque is larger.*
+success: Good job!
+failure: Try again.
+
+#>
+
+Indeed! According to the table, only 522 out of the 7,128 observations correspond to municipalities with a mosque. This represents a relatively small proportion, accounting for approximately 7% of the total number of observations.  
+
+Let’s examine the different variables individually to identify any notable differences. 
+
+Regarding population density, municipalities with a mosque have a mean density of approximately 1,300, which is significantly higher than that of municipalities without mosques. Additionally, we observe a very high standard deviation, suggesting considerable variation in population density across observations. The share of female citizens remains very similar across all groups and has a relatively low standard deviation, which is what one would expect for this variable. A significant difference is observed in the share of foreigners, which stands at around 11.14% in municipalities with a mosque—approximately 70% higher than in municipalities without a mosque. A smaller, yet noticeable, difference is found in the log of the employment share, where municipalities with a mosque show a slightly higher employment rate than those without one. The voter turnout in municipalities with a mosque is 70.84%, which is approximately 6 percentage points lower than in municipalities without a mosque.
+
+Interestingly, established parties are less popular in municipalities with a mosque, receiving about 64.75% of the voting share across all municipalities and years, whereas municipalities without a mosque have an average share approximately 8 percentage points higher. Right-wing parties have a slight advantage in municipalities with a mosque, with a voting share of 1.34 percentage points, while their success diminishes in municipalities without a mosque, where they account for around 0.84 percentage points. The same effect is observable for left-wing parties, which secure double the voting share (2.19 percentage points) in municipalities with a mosque compared to those without. Looking at the standard deviation, we can also see that for both right- and left-wing parties, the standard deviations are relatively high in relation to the means, indicating considerable fluctuations in these variables within the data.
+
+In summary, there are significant differences in population density, the percentage of foreign residents, and voting outcomes. Municipalities with a mosque generally exhibit a higher population density and a greater share of foreigners. Additionally, established parties receive a lower voting share, while more extreme parties, such as right-wing and left-wing, enjoy greater popularity. We should keep these differences in mind as we revisit them later in the problem set.
+
+Now that we have a good understanding of our data, we can proceed with the analytical part of this problem set.
+
+## Exercise 2 -- The Effect of Salience on Voting Behavior
+
+It is necessary to load the data set <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">NRW</span> at the beginning of every exercise. Please press the check button. 
+
+```{r "3_1"}
+#< task_notest
+NRW <- readRDS("NRW_final.rds")
+#>
+```
+
+This exercise consists of several different parts. We will begin by taking a look at our initial assumption that minority salience increases during Ramadan. Following this, we will create our first linear model to quantify the effect of Ramadan on voting behavior. In doing so, we will explore some unique characteristics of Ramadan that make it particularly interesting for our analysis, as well as address some challenges that arise with this initial model. 
+Let's now continue with the exercise.
+
+As mentioned in the introduction of this exercise, we are interested in examining the impact of Minority Salience on voting patterns. We assume that during the holy month of Ramadan, Muslim communities become more prominent due to increased participation in religious practices such as communal celebrations. Additionally, Ramadan is likely to attract more media coverage, thereby bringing attention to Muslim communities.
+
+To assess the plausibility of this assumption, we initially investigate this relationship by analyzing data on Google searches.
+
+**<span style="color: orange;">Task</span>**: Let's start by using the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">readRDS()</span> function to load the file <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">Google.rds</span> and assign it to the variable <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">Google</span>. 
+
+```{r "3_2"}
+#< task
+
+#>
+
+Google <- readRDS("Google.rds")
+```
+
+Now that you've correctly loaded and assigned the file to the variable <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">Google</span>, we want to take a glance at the data. Let's use the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">head()</span> function to display the first few lines of the data set.
+
+```{r "3_3"}
+#< task
+
+#>
+
+head(Google)
+```
+
+
+Perfect! We can see that the data set consists of four variables. It includes the monthly amount of Google searches for cities across Germany with a population greater than 10,000 citizens between the years 2014 and 2018. Each city is identified by the unique variable <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">city_id</span>. The second variable, named <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">start</span>, represents the number of months before (-) or after (+) Ramadan. The third variable, <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">mosques</span>, is a dummy variable indicating whether a mosque is present in the city. Lastly, the variable <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">searches_muslimindex</span> contains the total number of Google searches in each city for the specific month.
+
+#! start_note "Muslim related Google searches"
+Google searches are classified as Muslim-related if they contain at least one or more of the following words:
+* Muslim
+* Islam
+* Moschee
+* Ramadan
+
+#! end_note
+
+To visualize the relationship between Ramadan and minority salience, represented by Google search volume, we aim to employ an Event-Study design.  
+This design enables the analysis of the impact of a specific treatment—in our case, the start of Ramadan—on a given outcome, namely, Muslim-related Google searches. 
+For our plot, we intend to include the four months preceding and following Ramadan, depicting the sum of city Google searches per month. Additionally, we seek to differentiate between municipalities with and without a mosque to check for potential differences in the magnitude of the effect. 
+
+To start, we first must filter our data set to include only the four months pre- and post-treatment. After that, we need to group the data by the specific month and the presence of a mosque. To finish, the new data set, we then need to compute the mean of Google searches for every group. This should result in a data set with a total of three columns and 18 observations. 
+We can again use some functions included in the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">dplyr</span> package and link them together to perform these operations. To create a chain of functions, you can use the pipe operator <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">%>%</span>. By placing it between functions, the output of the first function is passed as input to the next, enabling you to sequentially manipulate your data.
+
+#< quiz "Event-Study"
+question: Which functions do you think should be used, and in what order?
+sc: 
+    - select() %>% filter() %>% group_by()
+    - filter() %>% select () %>% group_by()
+    - filter() %>% group_by() %>% mutate()
+    - filter() %>% group_by() %>% summarize()*
+success: Good job!
+failure: Try again.
+
+#>
+
+Now that you know, which functions are needed to perform the task we can start with the coding.
+
+**<span style="color: orange;">Task</span>**: Please fill in the empty code lines to create the new data set <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">Google_event</span>.
+
+```{r "3_4"}
+#< fill_in
+Google_event <- Google %>%
+  ___(start >= -___ & start <= ___) %>%
+  ___(___, ___) %>%
+  summarise(mean = ___(searches_muslimindex, na.rm = TRUE)) %>%
+  mutate(mosques = as.factor(mosques))
+#>
+
+Google_event <- Google %>%
+  filter(start >= -4 & start <= 4) %>%
+  group_by(start, mosques) %>%
+  summarize(mean = mean(searches_muslimindex, na.rm = TRUE)) %>%
+  mutate(mosques = as.factor(mosques))
+```
+
+Having grouped the data, we can now use the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">head()</span> function to to check whether the grouping and summarizing worked correctly.
+
+**<span style="color: orange;">Task</span>**: Press the check button to show the head of the data set. 
+
+```{r "3_5"}
+#< task_notest
+head(Google_event)
+#>
+```
+
+The data set appears to be correct. This means that we can now proceed to create our Event-Study plot. To create the plot we will use the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">ggplot()</span> function, which is part of the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">ggplot2</span> package.
+
+#! start_note "ggplot2"
+The <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">ggplot2</span> package is a useful tool for creating visually appealing and informative plots. Its basic syntax begins with the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">ggplot()</span> function, where you specify the data set and aesthetics (such as x and y variables). You then extend the plot by adding layers, which may consist of points, lines, bars, or text. These layers are incorporated using functions like <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">geom_point()</span>, <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">geom_line()</span>, or <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">geom_bar()</span>, each followed by a + sign.
+
+If you want to learn more about the package you can take a look at the following website [SOURCE](https://rafalab.dfci.harvard.edu/dsbook/ggplot2.html).
+
+#! end_note
+
+To show the plot, please click the check button below.
+
+```{r "3_6",fig.width=12, fig.height=6, fig.cap=''}
+#< task_notest
+Google_event %>%
+  ggplot(aes(x = start, y = mean, color = mosques)) + 
+  geom_line() +
+  geom_point() +
+  geom_vline(xintercept = c(0, 1), linetype = "dashed") + 
+  labs(title = "Ramadan and Google Searches", x = "Month relative to the start of Ramadan", y = "Muslim related Google searches", color = NULL) +
+  scale_color_manual(values = c("#FC4E07", "#A7B4AE")) +
+  scale_x_continuous(labels = c("-4", "-3", "-2", "-1", "Start Ramadan", "End Ramadan", "2", "3", "4"), breaks = -4:4) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5)) 
+#>
+```
+
+The plot clearly illustrates that the volume of Muslim-related Google searches increases following the start of Ramadan. This supports our initial hypothesis that during Ramadan, Muslim-related topics receive heightened attention in our society. Additionally, there is a significant disparity in the magnitude of this effect between cities with and without a mosque. This discrepancy appears intuitive, as we can infer that Muslim communities with a mosque are likely more engaged and visible in practicing their religion compared to those without. 
+We will revisit this difference and its significance later on in this problem set.  
+
+Now that we know our hypothesis of increased minority salience during Ramadan is supported by the data, we can continue our analysis by creating a first simple linear model to quantify the impact of minority salience on voting behavior. 
+
+We will use the following formula to implement the model: 
+
+$\textit{Voting Share}_{\textit{it}} = \textit{ß}_{\textit{0}} + \textit{ß}_{\textit{1}} \times \textit{Ramadan}_{\textit{it}} + \textit{u}_{\textit{it}}$
+
+The model comprises the following components:
+
+* $\textit{i}$ indicates the municipality
+* $\textit{t}$ indicates the election
+* $\textit{Voting Share}$ is the Voting Share in percent
+* $\textit{Ramadan}$ is a binary variable, which switches to 1 if the election is within 90 days of the start of Ramadan
+* $\textit{u}$ is the error term
+
+#< quiz "Ramadan"
+question: Considering the previous exercise and the 15 variables included in our NRW data set, do you think these variables are sufficient to implement the model from above?
+sc: 
+    - Yes
+    - No*
+success: Good job!
+failure: Try again.
+
+#>
+
+Exactly! To implement our Model we first need to create a variable named Ramadan, which transitions to 1 if the election occurred within 90 days after the commencement of Ramadan.
+
+**<span style="color: orange;">Task</span>**: Fill in the blanks to add the variable <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">ramadan</span> to our data set <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">NRW</span>.
+
+```{r "3_7"}
+#< fill_in
+NRW <- NRW %>%
+  mutate(ramadan = ifelse(date_election >= ramadan_start & date_election - ramadan_start <=___,___,___))
+#>
+
+NRW <- NRW %>%
+  mutate(ramadan = ifelse(date_election >= ramadan_start & date_election - ramadan_start <=90,1,0))
+```
+
+Great work! We’ve now added the variable <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">ramadan</span> to our data set so it can be used as an explanatory variable in our linear model. We should now have all the necessary data and be ready to create the model. Before we do that, let’s take a moment to reflect on the special characteristic of Ramadan mentioned in the introduction of this exercise. This characteristic is unique and has to do with the timing of Ramadan throughout the years.
+
+In 2023, Ramadan began on the 22nd of March and lasted until Thursday, the 20th of April.
+Please use your search engine of choice to answer the following question. 
+
+#< quiz "Ramadan Start"
+question: When did Ramadan start this year? Please enter the answer in the following example format 22.03.2023.
+answer: 10.03.2024
+roundto: 1
+#>
+
+You may have already noticed that the two dates differ from each other. This discrepancy is due to the cyclical nature of Ramadan. Ramadan shifts back by 11 days each year, creating idiosyncratic variation in the timing between Ramadan and elections. This is especially true since federal elections typically take place in September or October, while state elections are held in May. 
+
+**<span style="color: orange;">Task</span>**: To visualize this rotation throughout the years, please click the check button.
+
+```{r "3_8",fig.width=12, fig.height=6, fig.cap=''}
+#< task_notest
+ramadan <- readRDS("Ramadan_election.rds")
+
+ramadan %>%
+  ggplot(aes(x=year, y=yday_election)) +
+  geom_point(aes(shape = election_type, color = ifelse(ramadanaffect == "Election affected by Ramadan", "green", "black")), size = 4) +
+  geom_point(aes(y=yday_ramadan), size = 4, color = "orange", shape = 20) +
+  geom_errorbar(aes(ymin = yday_ramadan, ymax = ramadan90, color = ifelse(ramadanaffect == "Election affected by Ramadan", "orange", "grey")), 
+  width = 0, size = 0.75) +
+  labs(title = "Ramadan Cycle", x = "Year", y = "Month", color = NULL, shape = NULL) +
+  scale_y_continuous(breaks = seq(30, 360, by = 30), labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) +
+  scale_x_continuous(breaks = seq(1979, 2013, by = 1)) +
+  scale_color_identity() +
+  guides(shape = guide_legend(order = 1), color = guide_legend(order = 2)) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5), axis.text.x = element_text(angle = 45, hjust = 1)) 
+#>
+```
+
+The plot displays data spanning from 1980 to 2013 on the X-axis, representing years. On the Y-axis, we observe the different months of a year. The orange dots indicate the beginning of Ramadan for each year. Additionally, a 90-day interval after each Ramadan start date is visualized.
+The presence of black dots and triangles denotes federal and state elections respectively. If an election falls within the 90-day period following Ramadan, the color switches to green.
+
+A glance at the orange dots reveals the cyclic nature of Ramadan, showcasing its shifting start dates across the years. Meanwhile, the elections demonstrate relative stability over the years, with notable exceptions such as the federal elections in 1983 and 1987.
+Among the total of 18 elections plotted, only approximately 4 fall within the 90-day Ramadan window, thus being directly influenced by it.
+
+As previously mentioned, the cyclical rotation of Ramadan is particularly valuable because it introduces exogenous variation in the time distance of elections to Ramadan. Recall that we defined the Ramadan dummy variable as 1 if an election occurred within 90 days of the start of Ramadan. This rotation therefore ensures that the treated elections vary unpredictably across the data set, making the ramadan variable independent of other factors that might affect election outcomes.
+
+If Ramadan were fixed to the same date each year, this variation would not exist, and the distance to Ramadan would become correlated with other systematic factors, such as election cycles or seasonal effects. 
+
+Now let's continue with implementing the model, we will utilize the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">lm()</span> function. This function allows us to create simple linear models. To visualize the results of our models, we will employ the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">stargazer()</span> function from the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">stargazer</span> package. For further information about <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">stargazer</span>, please refer to the note below.
+
+#! start_note "stargazer"
+The <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">stargazer</span> package in R simplifies the creation of high-quality tables for statistical models. It allows customization of table content and appearance, supports various model objects, integrates with LaTeX, HTML, and plain text formats, enables comparison of multiple models in a single table, and offers a user-friendly interface for quick table generation.
+
+#! end_note
+
+**<span style="color: orange;">Task</span>**: Press the check buttons to generate and show the different models. 
+
+```{r "3_9",results='asis'}
+#< fill_in
+library(stargazer)
+
+reg_right <- lm(___ ~ ramadan, data = NRW)
+reg_left <- lm(___ ~ ramadan, data = NRW)
+reg_establish <- lm(___ ~ ramadan, data = NRW)
+reg_turnout <- lm(___ ~ ramadan, data = NRW)
+
+stargazer(___, ___, ___, ___, align = TRUE, dep.var.labels = c("Right", "Left", "Established", "Turnout"), covariate.labels = c("Ramadan"), type = "html")
+#>
+library(stargazer)
+
+reg_right <- lm(right ~ ramadan, data = NRW)
+reg_left <- lm(left ~ ramadan, data = NRW)
+reg_establish <- lm(establish ~ ramadan, data = NRW)
+reg_turnout <- lm(turnout ~ ramadan, data = NRW)
+
+stargazer(reg_right, reg_left, reg_establish, reg_turnout, align = TRUE, dep.var.labels = c("Right", "Left", "Established", "Turnout"), covariate.labels = c("Ramadan"), type = "html")
+```
+
+#< quiz "Causality"
+question: Which interpretation of the model is accurate?
+mc: 
+    - Ramadan results in an increased voting share for all parties and an increased voter turnout.
+    - Ramadan increases the voting share of right-wing parties by 0.769 percentage points.
+    - During Ramadan we can observe an increase in the voting share across all political parties and in voter turnout.*
+success: Good job!
+failure: Try again.
+
+#>
+
+Yes you are right! We observe a correlation between Ramadan and an uptick in voting share across all political parties, as well as in voter turnout. However, it's crucial to acknowledge that these associations should not be interpreted causally.
+
+Looking at the plot from above, which illustrates the cyclical nature of Ramadan, we can observe that out of the 18 elections included in our data set, only 4 meet the criteria of occurring within 90 days after Ramadan.
+
+These elections are the...
+
+* Federal election in 1980
+* State election in 1990
+* Federal election in 2009
+* Federal election in 2013
+
+The small number of treated elections in our analysis presents a challenge, as other events occurring during these years may have influenced election outcomes, potentially overshadowing the effect of increased minority salience during Ramadan on election results. 
+
+Let’s examine the four elections to identify whether extraordinary events occurred in these years.
+
+### Federal Election in 1980 
+
+One significant event to consider is the outbreak of the Iran-Iraq War, which began on September 22, 1980. This war, combined with rising oil prices and global economic instability, likely influenced political discussions and voter behavior. The federal election took place just 14 days later, on October 5, 1980, leaving little time for the political consequences of the conflict to be excluded from public discourse. The political views of different parties on this war and the economic pressures it created could have played a role in shaping voter preferences (Bundeszentrale für politische Bildung, 2024, 27. December) [SOURCE](https://www.bpb.de/kurz-knapp/hintergrund-aktuell/212301/der-erste-golfkrieg-1980-1988/).
+
+### State Election in 1990 
+
+The reunification of Germany, following the fall of the Berlin Wall in 1989, is an obvious factor directly impacting this election. The reunification process posed significant political, economic, and social challenges, with issues such as the integration of East and West Germany, economic disparities, and the future of the country dominating public discourse. These challenges likely influenced voter preferences and the election outcomes biasing the Ramadan estimator. 
+
+### Federal Election in 2009
+
+The financial crisis of 2008 is a critical factor to consider for the 2009 federal election. The economic downturn profoundly shaped political sentiment and priorities, as evidenced by a study from the Konrad-Adenauer-Stiftung. Three months after the crisis, 36% of respondents rated the general economic situation as bad, and 68% expected a worsening economic future.
+
+Given these concerns, it is plausible that migration and other minority-related topics garnered less attention during this period. Political discussions were dominated by economic issues, with a ranking of key political topics showing:
+
+* Unemployment (42%)
+* Banks and the financial industry (35%)
+* General economic conditions (26%)
+
+This data highlights the pessimism surrounding the economy and its central role in the political landscape, increasing the polarization of economic issues in the election, which potentially could have overshadowed the effects of Ramadan on election results(Jung, H., 2009, March)  [SOURCE](https://www.kas.de/documents/252038/253252/7_dokument_dok_pdf_15965_1.pdf/69d062cf-5e95-a24c-8fe9-15dcea7cb510?version=1.0&t=1539662561702). 
+
+### Federal Election in 2013
+
+Leading up to the 2013 federal election, the Euro crisis (2009-2012) introduced significant economic uncertainty, influencing political discourse. The crisis, coupled with the potential failure of the euro as a common European currency, fueled anti-European sentiment, particularly among right-wing parties like the Alternative for Germany (AfD).
+
+Founded in 2013, the AfD initially focused on criticizing the European Union and the euro, resonating with voters concerned about economic instability. Over time, the party expanded its platform to include topics like refugee policies, appealing to a broader voter base (Bundeszentrale für politische Bildung, 2024, 27. December)  [SOURCE](https://www.bpb.de/themen/parteien/parteien-in-deutschland/afd/273130/etappen-der-parteigeschichte-der-afd/).
+It is certainly arguable that the aftershocks of the Euro crisis contributed to a growing Euro-skeptic sentiment among the population, which in turn could have led to an increased voter share for right-wing parties associated with a more anti-European agenda.  
+
+Taking into account the information about the treated elections and the political events occurring simultaneously, we can conclude that there is a significant possibility that our Ramadan estimator is biased. This highlights why causal interpretations cannot be reliably drawn from our initial model.
+
+However, a solution to this issue will be presented in the next exercise.  
+
+## Exercise 3 -- Introducing the Difference-in-Differences Approach
+
+It is necessary to load the data set <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">NRW</span> at the beginning of every exercise. Please press the check button. 
+
+```{r "4_1"}
+#< task_notest
+NRW <- readRDS("NRW_final.rds")
+NRW <- NRW %>%
+  mutate(ramadan = ifelse(date_election >= ramadan_start & date_election - ramadan_start <=90,1,0))
+#>
+```
+
+As previously mentioned, this exercise focuses on introducing a statistical method that addresses some of the issues encountered with our initial linear model. We will begin by exploring the theoretical foundation of this method and then apply it to our data set step by step. 
+
+### General Idea 
+
+We begin by revisiting the challenges we encountered in the previous exercise. Our initial idea was to use Ramadan as an explanatory variable, based on the assumption that during Ramadan, the salience of Muslim communities increases, which could influence voting behavior. Due to the cyclical nature of Ramadan and the relatively fixed dates of elections, we observed exogenous variation in the time interval between the start of Ramadan and election dates. This resulted in a total of four treated elections in our data set, where the proximity to Ramadan could potentially affect the voting outcomes.
+
+However, this small number of treated elections posed a significant challenge. Events occurring in the same year as the treated elections could have independently influenced voting outcomes and coincidentally aligned with the timing of Ramadan. For example, a major political event or economic crisis might affect election results while being correlated with Ramadan's proximity to the elections. This creates a problem as we would not be able to attribute changes in voting behavior solely to Ramadan and the heightened minority salience it generates.
+
+To address this issue the authors of the paper make use of an another variable included in the data set.
+If you think about Exercise 2, where we checked our initial assumption of whether Ramadan has an impact on minority salience by looking at Google search volume, we differentiated between municipalities with a mosque and municipalities without a mosque.
+
+#< quiz "Mosque Proxy"
+question: Did we observe differing Google search activity in municipalities with a mosque compared to those without one?
+sc: 
+    - Yes*
+    - No
+success: Good job!
+failure: Try again.
+
+#>
+
+Exactly! We observed that in municipalities with a mosque, Google activity was generally higher. This can be attributed to the expectation that in such municipalities, the Muslim community is likely to be more visible and engaged. In fact, we could argue that the presence of a mosque in a municipality serves as a proxy for a more religiously active community.
+
+The authors of the original paper utilized this proxy variable to implement a differences-in-differences (DiD) approach. The key idea is that unobserved factors influencing voting outcomes and correlated with Ramadan (e.g., economic crises or political scandals) are likely to affect both types of municipalities—those with and without a mosque—in a similar manner.
+
+To illustrate, consider an event like the Euro crisis, which might influence voting outcomes in both types of municipalities. If we only compare election results based on Ramadan’s timing, this external event would bias our estimates, as we could no longer isolate Ramadan's effect. However, the DiD approach leverages the fact that Ramadan is expected to have a larger influence on voting behavior in municipalities with a mosque, due to the more visible and active Muslim community, compared to municipalities without a mosque, where little to no effect is expected. By calculating the differences in voting outcomes between the two types of municipalities and comparing these differences across treated and untreated elections, we can attribute any observed differential effect to Ramadan.
+
+In summary, the difference-in-differences approach is a statistical method used to estimate the causal effect of a treatment by analyzing changes in outcomes over time, specifically comparing the pre-treatment phase (no affection of Ramadan) and the post-treatment phase (affected by Ramadan). It contrasts these changes between a treatment group (municipalities with mosques) and a control group (municipalities without mosques). By isolating the differential changes before and after Ramadan, the approach helps disentangle the Ramadan effect from other confounding influences, ensuring a more robust estimation of the causal relationship.
+
+### Differences-in-Differences by hand
+
+In the next step, we aim to manually calculate our treatment effect for the right-wing election results. To do this we first need to calculate the four means of the outcome variable for the different periods and groups. 
+This should result in a total of 4 variables.
+
+* $\textit{c}_{\textit{pre}}$ Control group pre-treatment
+* $\textit{c}_{\textit{post}}$ Control group post-treatment
+* $\textit{t}_{\textit{pre}}$Treatment group pre-treatment
+* $\textit{t}_{\textit{post}}$Treatment group post-treatment
+
+Before we create the necessary variables, let's first take a look at the election results in our control and treatment group during the pre-experimental period. In our case, Ramadan is an annual event, which complicates simply filtering the data before Ramadan as we would with a typical intervention. To simulate this approach, we first filter our data set to include only elections that are not affected by Ramadan. This can be done using the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">filter()</span> function on the ramadan variable.
+
+```{r "4_2"}
+#< fill_in
+DiD_data_pre <- NRW %>%
+  filter(___ == ___)
+#>
+
+DiD_data_pre <- NRW %>%
+  filter(ramadan == 0)
+```
+
+Good job! Now let's check whether the election results for right-wing parties differ between municipalities with and without a mosque in the pre treatment phase.
+
+**<span style="color: orange;">Task</span>**: Fill in the blanks in the code to calculate the mean of the right-wing election results for the treatment and control group. Use the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">group_by()</span> function to group the data by the variable <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">dummy_mosque</span>.
+
+```{r "4_3"}
+#< fill_in
+DiD_data_pre <- NRW %>%
+  filter(ramadan == 0) %>%
+  group_by(___) %>%
+  summarise(mean = ___(right, na.rm = TRUE))
+#>
+
+DiD_data_pre <- NRW %>%
+  filter(ramadan == 0) %>%
+  group_by(dummy_mosque) %>%
+  summarise(mean = mean(right, na.rm = TRUE))
+```
+
+We now have a data set containing only elections that were not affected by Ramadan, split into our treatment and control group. Let's take a look at the data.
+
+**<span style="color: orange;">Task</span>**: Press the check button to create a table, which contains the two variables. 
+
+```{r "4_4"}
+#< task_notest
+
+DiD_data_pre %>%
+  kbl(col.names = c("Mosque", "Mean")) %>%
+  kable_styling() %>%
+  kable_styling(full_width = FALSE)
+#>
+```
+
+According to the table, municipalities with a mosque seem to have a higher average right-wing voting share during the pre-experimental period. This strengthens our original assumption of fundamental differences between the two groups and supports the use of the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">dummy_mosque</span> variable in our difference-in-differences approach.
+
+So far, we have only compared the two groups in the pre-experimental period. However, as we discussed, the key idea of the DiD method is to also compare the two groups over time. To do this, we can use the complete <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">NRW</span> data set again, which also includes information on elections that occurred within the 90-day window around Ramadan and therefore should be affected by it. We then group our data not only by the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">dummy_mosque</span> variable but also by the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">ramadan</span> variable, which we add to the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">group_by()</span> function. This approach allows us to assess the impact of Ramadan on right-wing voting behavior over time for the 2 different groups.
+
+To create the data needed, we will again make use of the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">group_by()</span> function. After successfully grouping the data, you can use the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">summarize()</span> function to calculate the mean of the right-wing election results.
+
+**<span style="color: orange;">Task</span>**: Fill in the blanks of the code chunk down below to create the desired variables and store the result in the variable <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">DiD_data</span>. 
+
+```{r "4_5"}
+#< fill_in
+DiD_data <- NRW %>%
+  group_by(___,___) %>%
+  summarize(mean = ___(___, na.rm = TRUE))
+#>
+
+DiD_data <- NRW %>%
+  group_by(dummy_mosque,ramadan) %>%
+  summarize(mean = mean(right, na.rm = TRUE))
+```
+
+Well done! Before we continue with the calculation of the DiD estimator, let's first take a quick look at the variables we have previously calculated.
+
+**<span style="color: orange;">Task</span>**: Press the check button to create a table, which contains the four variables.
+
+```{r "4_6"}
+#< task_notest
+
+DiD_data %>%
+  kbl(col.names = c("Mosque", "Ramadan", "Mean")) %>%
+  kable_styling() %>%
+  kable_styling(full_width = FALSE)
+#>
+```
+
+As we can see, the average right-wing election results almost doubled in magnitude, increasing from 0.68 to 1.34 in municipalities without a mosque. In comparison, in municipalities with a mosque, the voting share increased from 1.02 to 2.31, representing an even greater increase than in municipalities without a mosque.
+
+**<span style="color: orange;">Task</span>**: 
+Run the code below to store the data in four individual variables. This will make the later steps of computing the DiD estimator easier to understand.
+
+```{r "4_7"}
+#< task_notest
+
+treatment_post <- DiD_data[4,3]
+control_post <- DiD_data[2,3]
+treatment_pre <- DiD_data[3,3]
+control_pre <- DiD_data[1,3]
+#>
+```
+
+Now that we have defined these variables, we can compute our treatment effect. Use the information and knowledge you gained in the earlier parts of the chapter to choose the correct formula for the treatment effect in the quiz below. Keep in mind that the idea is to calculate the difference in outcomes between the treatment and control groups for both the 'before' and 'after' periods.
+
+1. $\textit{DiD} = (\textit{t}_{\textit{post}}-\textit{c}_{\textit{post}})-(\textit{t}_{\textit{pre}}-\textit{c}_{\textit{pre}})$
+2. $\textit{DiD} = (\textit{t}_{\textit{pre}}-\textit{c}_{\textit{pre}})-(\textit{t}_{\textit{post}}-\textit{c}_{\textit{post}})$
+
+#< quiz "DiD Formula"
+question: Pick the correct formula.
+sc: 
+    - 1*
+    - 2 
+success: Good job!
+failure: Try again.
+
+#>
+
+If we use the second formula, we subtract the differences between the treatment and control groups in the wrong order. Specifically, we are first calculating the difference in the pre-treatment phase and then subtracting the difference in the post-treatment phase. This approach misrepresents  the interpretation of the treatment effect, leading to a result that points in the opposite direction of the true effect. Therefore, we need to first compute the difference between the treatment and control groups in the post-treatment phase, and then subtract the difference from the pre-treatment phase.
+
+**<span style="color: orange;">Task</span>**: Fill in the correct code to implement the DiD formula.
+
+```{r "4_8"}
+#< fill_in
+DiD <- (___-___)-(___-___)
+DiD
+#>
+
+DiD <- (treatment_post-control_post)-(treatment_pre-control_pre)
+DiD
+
+```
+
+According to our formula, the DiD estimator is 0.57. This suggests that during Ramadan, we can expect a 0.57 percentage point increase in the voting share for right-wing parties in municipalities with a mosque. 
+
+Let's finish the Chapter with a small recap. 
+During the completion of this exercise we learned a statistical method, which helps to address the problems of our initial simple linear model. This approach works by accounting for differences between the two groups over time. It does this by comparing the changes in outcomes between the control and treatment groups across different time periods. Additionally, it controls for time trends, ensuring that any observed effects are due to the treatment rather than underlying trends. 
+
+Although manually calculating the DiD estimator works well, we will learn a new method to perform the same calculation using linear regression in the next chapter. This method will significantly speed up the process by eliminating the need to individually calculate all the different variables for each political party. Additionally, it allows for the inclusion of fixed effects and control variables, which we will explore at the end of the problem set.
+
+## Exercise 4 -- Calculating the DiD Estimator with linear regression
+
+It is necessary to load the data set <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">NRW</span> at the beginning of every exercise. Please press the check button.
+
+```{r "5_1"}
+#< task_notest
+NRW <- readRDS("NRW_final.rds")
+NRW <- NRW %>%
+  mutate(ramadan = ifelse(date_election >= ramadan_start & date_election - ramadan_start <=90,1,0))
+#>
+```
+
+The goal of this exercise is to familiarize you with an alternative method for calculating the DiD estimator without the need for manual computation. We will begin by presenting the model required to reproduce the results, followed by a passage on how to interpret the various coefficients of the model. Next, we will create four different models for the different dependent variables in our data and interpret the results from each individual model.
+
+### Simple linear model  
+
+As you know in the previous exercise, we calculated the DiD estimator for the voting share of right-wing parties. We observed a positive effect, which indicates a positive relationship between the beginning of Ramadan and the election results for these parties. Since our data not only includes information about right-wing parties but also contains voting data for left-wing parties, established parties, and overall voter turnout, we also want to investigate these relationships. A good method for doing this is by using linear regression to create our models. To estimate the linear models, we will use the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">lfe</span> package. 
+For more information about this package, you can refer to the information page below.
+
+#! start_note "lfe"
+The <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">lfe</span> package offers  the user the option to expand simple linear models with fixed effects. On top of that, it also features the capability of the implementation of clustered robust standard errors and the use of instrumental variables. 
+These models are created with the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">felm()</span> function. 
+
+The syntax of <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">felm()</span> is as follows: 
+
+$\text{felm}(y \sim \text{control variables} \mid \text{fixed effects} \mid 0 \mid \text{cluster robust standard errors}, \text{data} = \text{data})$
+
+#! end_note
+
+Now that we are familiar with the function we will use to implement the models, we also need to examine the regression formula that will be used. We will start by only implementing the DiD approach without using fixed effects. 
+
+This is done by using the following formula:
+
+$\textit{Voting Share}_{\textit{it}} = \textit{ß}_{\textit{0}} + \textit{ß}_{\textit{1}} \times \textit{Presence of a Mosque}_{\textit{it}} + \textit{ß}_{\textit{2}} \times \textit{Ramadan}_{\textit{it}} + \textit{ß}_{\textit{3}} \times \textit{Presence of a Mosque * Ramadan}_{\textit{it}} +  \textit{u}_{\textit{it}}$
+
+The model comprises the following components:
+
+* $\textit{i}$ indicates the municipality
+* $\textit{t}$ indicates the election
+* $\textit{Voting Share}$ is the Voting Share in percent
+* $\textit{Presence of a Mosque}$ is a dummy variable that is equal to 1 for municipalities with a mosque
+* $\textit{Ramadan}$ is a binary variable, which switches to 1 if the election is within 90 days of the start of Ramadan
+* $\textit{u}$ is the error term
+
+#< quiz "DiD Estimator"
+question: Based on the formula provided above, which coefficient represents the DiD estimator and thus captures the causal effect?
+sc: 
+    - \(\beta_1\)
+    - \(\beta_2\)
+    - \(\beta_3\)*
+success: Good job!
+failure: Try again.
+
+#>
+
+The variable of interest is $\textit{ß}_{\textit{3}}$, which is an interaction term between the variables $\textit{Presence of a Mosque}$ and $\textit{Ramadan}$.
+
+Let's also take a look at the other 2 Betas in our model and discuss how to interpret them. 
+
+#< quiz "Beta 1"
+question: How can we interpret $\textit{ß}_{\textit{1}}$?
+sc: 
+    - Control group difference between the pre and post treatment phase 
+    - Treatment group difference between the pre and post treatment phase
+    - The Difference between the treatment and control group in the pre treatment phase*
+success: Good job!
+failure: Try again.
+
+#>
+
+$\textit{ß}_{\textit{1}}$ quantifies the difference in voting share between municipalities with and without a mosque before the treatment in our case Ramadan takes place.
+
+#< quiz "Beta 2"
+question: How can we interpret $\textit{ß}_{\textit{2}}$?
+sc: 
+    - Control group difference between the pre and post treatment phase*
+    - Treatment group difference between the pre and post treatment phase
+    - The Difference between the treatment and control group in the pre treatment phase
+success: Good job!
+failure: Try again.
+
+#>
+
+$\textit{ß}_{\textit{2}}$ measures the gap between the pre- and post-treatment periods for the control group, which consists of  municipalities without a mosque.
+
+Now we want to test our formula in R and thereby also control whether the manually calculated DiD for right-wing parties is consistent with the $\textit{ß}_{\textit{3}}$ coefficient of the linear model.
+
+**<span style="color: orange;">Task</span>**: To start the task you first need to load the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">lfe</span> package to get access to the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">felm()</span> function. After that create the 4 different models and store them in the variables down below:
+
+* reg_right
+* reg_left
+* reg_established
+* reg_turnout
+
+If you are finished with this you can use the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">stargazer()</span> function to display the results. 
+
+```{r "5_2",results='asis'}
+#< fill_in
+library(___)
+
+reg_right <- felm(___ ~ dummy_mosque + ramadan + ___, data = NRW)
+reg_left <- felm(___ ~ dummy_mosque + ramadan + ___, data = NRW)
+reg_established <- felm(___ ~ dummy_mosque + ramadan + ___, data = NRW)
+reg_turnout <- felm(___ ~ dummy_mosque + ramadan + ___, data = NRW)
+
+stargazer(reg_right, reg_left, reg_established, reg_turnout, align = TRUE, dep.var.labels = c("Right", "Left", "Established", "Turnout"), covariate.labels = c("Mosque", "Ramadan", "DiD"), type = "html")
+#>
+
+library(stargazer)
+
+reg_right <- felm(right ~ dummy_mosque + ramadan + dummy_mosque*ramadan, data = NRW)
+reg_left <- felm(left ~ dummy_mosque + ramadan + dummy_mosque*ramadan, data = NRW)
+reg_established <- felm(establish ~ dummy_mosque + ramadan + dummy_mosque*ramadan, data = NRW)
+reg_turnout <- felm(turnout ~ dummy_mosque + ramadan + dummy_mosque*ramadan, data = NRW)
+
+stargazer(reg_right, reg_left, reg_established, reg_turnout, align = TRUE, dep.var.labels = c("Right", "Left", "Established", "Turnout"), covariate.labels = c("Mosque", "Ramadan", "DiD"), type = "html")
+
+```
+
+Well done! In column 1, where we use the right-wing parties as the dependent variable, we observe a DiD estimator of 0.57. This matches exactly with the value we calculated manually in the previous exercise, demonstrating that the linear model produces the same results for right-wing parties as the manual method.k
+
+Now, let's move on to discuss our results for each individual party in more detail.
+
+**Right Wing parties**
+
+For $\textit{ß}_{\textit{1}}$, we observe a coefficient of 0.337. This coefficient represents the difference in right-wing voting shares between our treatment and control group for elections that are not affected by Ramadan. This result is consistent with the previous chapter, where we achieved the same difference by filtering and grouping our data set.
+Turning to $\textit{ß}_{\textit{2}}$, which measures the difference in election results between the pre-experimental and post-experimental phases for the control group, we see a positive coefficient of 0.718. This indicates that, for elections affected by Ramadan, municipalities without a mosque show a 0.718 percentage point higher right-wing voting share compared to those not affected by Ramadan.
+Finally, our Difference-in-Differences (DiD) estimator, $\textit{ß}_{\textit{3}}$, shows that the voting share for right-wing parties increases by approximately 0.571 percentage points during Ramadan in municipalities with a mosque. This suggests that the salience of the Muslim community during Ramadan might influence voting behavior, leading to an increase in support for right-wing parties in municipalities with a mosque, as compared to municipalities without a mosque.
+
+**Left Wing parties**
+
+Overall, we observe that the coefficients for left-wing parties are consistently larger in magnitude compared to those for right-wing parties. Municipalities with a mosque show approximately 0.732 percentage points higher voting shares for left-wing parties during the pre-treatment phase, as indicated by $\textit{ß}_{\textit{1}}$.
+Furthermore, the DiD estimator for left-wing parties is around 1.296 percentage points, which is more than double the corresponding effect observed for right-wing parties. This substantial difference suggests that the impact of Ramadan on voting shares is notably greater for left-wing parties in municipalities with a mosque compared to right-wing parties.
+These findings indicate that while Ramadan appears to affect both types of parties, the magnitude of the effect is considerably stronger for left-wing parties, highlighting a potentially significant difference in how the presence of a mosque influences electoral outcomes for different political orientations.
+
+**Established parties**
+
+When looking at the established parties, two key observations stand out. First, we notice that both $\textit{ß}_{\textit{1}}$ and $\textit{ß}_{\textit{3}}$ are negative. For our DiD estimator $\textit{ß}_{\textit{3}}$ this implies, that Ramadan has a negative effect on the voting results for established parties in municipalities with a mosque. In other words, during Ramadan, these parties tend to receive a lower share of the vote in these areas compared to municipalities without a mosque.
+
+#< quiz "Constant"
+question: How do you think the constant term should be interpreted appropriately?
+sc: 
+    - The constant represents the average treatment effect for the entire sample.
+    - The constant represents the baseline level of the dependent variable for the control group during the pre-treatment period.*
+    - The constant shows how much the treatment period affects the dependent variable.
+success: Good job!
+failure: Try again.
+
+#>
+
+You are right the very high constant suggests that, in the pre-treatment period, established parties generally had a much higher baseline voting share in the control group compared to the more extreme parties. This elevated constant reflects the stronger foundational support for established parties before any effects of Ramadan or the presence of a mosque are considered. 
+
+**Voter turnout**
+
+At last, let's examine voter turnout. In this case, we see that $\textit{ß}_{\textit{1}}$ is negative and notably large, suggesting that municipalities with a mosque experience significantly lower voter turnout compared to municipalities without a mosque, even before Ramadan is considered. 
+Furthermore, $\textit{ß}_{\textit{3}}$, which DiD estimator, is 0.297 the smallest of all the DiD estimators we've analyzed. This tells us that Ramadan has the least impact on voter turnout in municipalities with a mosque when compared to its impact on other dependent variables, such as voting shares for established, right-wing, or left-wing parties. Although Ramadan influences electoral behavior, its effect on voter turnout in these areas is minimal, suggesting that other factors may be more influential in driving turnout in municipalities with a mosque.
+
+**Next steps**
+
+Good job! We have now successfully created and interpreted our first linear models to replicate the results of the manual Difference-in-Differences estimator using linear models. We achieved this by utilizing the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">felm()</span> function. However, so far, we have only implemented the most basic version of a DiD approach.
+As we havee previously discussed, the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">felm()</span> function also offers the ability to add fixed effects to our models. Incorporating fixed effects can be very useful because it allows us to control for unobserved factors that could otherwise bias our results. Fixed effects help to isolate the true impact of the treatment by accounting for these constant differences across units or over time.
+
+In the next part of this exercise, we will explore why adding fixed effects can significantly improve the accuracy of our model, and we will learn how to implement them in R using the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">felm()</span> function. 
+
+## Exercise 5 -- Adding Fixed Effects to our model
+
+It is necessary to load the data set <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">NRW</span> at the beginning of every exercise. Please press the check button.
+
+```{r "6_1"}
+#< task_notest
+NRW <- readRDS("NRW_final.rds")
+NRW <- NRW %>%
+  mutate(ramadan = ifelse(date_election >= ramadan_start & date_election - ramadan_start <=90,1,0),
+         district_name = as.factor(district_name),
+         election_type = as.factor(election_type))
+#>
+```
+
+As mentioned earlier, fixed effects help reduce bias in the estimators within our models. In this exercise, we will delve deeper into the concept of fixed effects to better understand how they work. We will begin with a general definition of fixed effects. Following this, we will implement the first type of fixed effects in our model and then progressively incorporate additional variants to further refine the models. Along the way, we will also discuss the unique role fixed effects play in the context of a differences-in-differences approach. But more on that later on in the exercise.  
+
+Let's start with a general idea of fixed effects. 
+
+### General Concept of Fixed Effects
+
+Fixed Effects are a statistical method used to control for unobserved confounders within a model—variables that affect both the independent and dependent variables but are not directly observed. Without controlling for these hidden influences, estimates can be biased, leading to inaccurate results. 
+
+If you don't know what a confounder is, you can take a look at the note down below to learn more about them. 
+
+#! start_note "Confounder"
+A confounder is a variable that influences both the independent variable and the dependent variable, potentially leading to a misleading association between them. It can obscure the true nature of the relationship by either suggesting a connection that does not exist or distorting the strength and direction of an actual relationship.
+
+This DAG (Directed Acyclic Graph) illustrates the relationships between the confounder, the explanatory variable, and the dependent variable.
+
+```{r "6_2",fig.cap=''}
+#< task_notest
+library(dagitty)
+library(ggdag)
+
+coord_dag <- list(
+  x = c(Treatment = 0, Outcome = 3, Confounder = 1.5),
+  y = c(Treatment = 0, Outcome = 0, Confounder = 1)
+)
+
+dag <- dagify(
+  Outcome ~ Treatment + Confounder,
+  Treatment ~ Confounder,
+  coords = coord_dag,
+  labels = c("Outcome" = "Outcome",
+             "Treatment" = "Treatment",
+             "Confounder" = "Confounder")
+)
+
+set.seed(1234)
+ggdag(dag,
+      text = FALSE,
+      use_labels = "label") +
+      theme_dag() 
+#>
+```
+
+In the DAG, it is evident that there is a relationship between the Treatment and the Outcome variable. If this were the only relationship, our estimator would be unbiased, allowing for a causal interpretation of the results. Unfortunately, another variable—the confounder—affects both the Treatment and the Outcome. This creates a backdoor path from the confounder to both the Treatment and the Outcome, leading to spurious correlation.
+
+If we could observe this confounder, we could include it as a control in our model, closing the backdoor and eliminating the bias. However, as mentioned earlier, data on such variables is often unavailable, making direct control impossible (Rieber, A., 2022) [SOURCE](https://projektkurs-data-science-ulm2122.netlify.app/slides/dag_video.pdf).
+
+The solution to this issue is the use of fixed effects in our model.
+
+#! end_note
+
+You may now wonder how it is possible to control for variables that we can’t observe or for which we do not have data on. The answer lies in an indirect approach: rather than attempting to control directly for the unobserved variable of interest, we instead control for another observed variable that, in theory, captures all constant factors within this context of analysis.
+
+Let’s consider a panel data set, where we have multiple units observed over set period of time. Each unit has unique, unobserved characteristics that remain constant over time but differ across units. For example, this could be individual traits for people or country-specific factors. As these attributes belong to different Units this creates a natural hierarchy in the data, as illustrated below.
+
+![Fixed Effects](./pdf/FE_Abbildung.png){ width=50% height=50% style="display: block; margin-left: auto; margin-right: auto;" }
+
+Let’s take a closer look at the illustration:
+
+The graphic is divided into two major layers. The lower layer contains the unobserved variables, which we cannot include in our model because we don’t have data on them. These are labeled as "Attributes" and represent the hidden characteristics that influence the outcome but are not measured directly. These attributes are in a hierarchical relationship with the "Unit" variables in the top layer.
+
+The Unit variables—observed and present in the dataset—are at a higher level in the hierarchy. They inherently include the unobserved "Attributes" within them. In other words, by controlling for the "Units," we effectively account for all the unmeasured variables and their potential influence on the outcome.
+
+If we were to estimate a model without accounting for these unit-specific attributes, our estimates could be biased because these factors might act as Confounders. Ideally, we would add these attributes as control variables in the model to address this bias. However, because we lack direct data on them as shown in the illustration, we cannot include these attributes as controls.
+
+### Two-Way Fixed Effects model
+
+In the text above, you’ll come across the term “Unit,” which might need some clarification. In this context, a "Unit" refers to any individual entity within the data set that is observed. This could be anything from an individual person to an entire country, depending on the scope of the analysis. When we refer to these as "Unit-Varying Fixed Effects," we are talking about a type of Fixed Effect that captures variations across these units. Alternativly we could also refer to these kind of fixed effects as "Time-Invariant Fixed Effects". 
+
+In addition to Unit-Varying Fixed Effects, there is a second type called Time-Varying Fixed Effects, which accounts for variations over time. Both types of Fixed Effects can be used simultaneously, as in the Two-Way Fixed Effects model, where both the unit and time variations are controlled for.
+
+In the following chapters, we will explore both types of Fixed Effects in greater detail. 
+
+### Unit-Varying Fixed Effects
+
+In this section, we’ll learn more about Unit Fixed Effects and illustrate the concept with a brief, intuitive example. After that we will continue by incorporating Unit-Varying Fixed Effects to our models. As noted earlier, "units" refer to individual entities in our data set, such as objects, people, or any other entity. We consider these units unique due to various time-invariant attributes that we don’t observe directly. For instance, in the case of people, one such attribute might be the eye color, which remains constant throughout your life.
+
+Now let's start with the example:
+
+Imagine we are studying the effect of a new treatment program on the recovery time of patients with a certain medical condition across different hospitals. A potential confounder on recovery time could be the overall quality of care provided by each hospital: hospitals with better resources and experienced staff might have faster recovery times, while hospitals with fewer resources might have longer recovery times and may not offer the new treatment as frequently. 
+
+However, a hospital’s overall quality of care tends to remain relatively stable over time. So, if we observe the same hospitals over multiple years, each hospital will likely maintain its general level of care during that period. To account for this constant influence per hospital, we could “control for hospital” by including hospital as a fixed effect in our model.
+
+One way to implement fixed effects in a regression model is by adding binary variables—commonly known as “dummy variables”—for each hospital. By doing this, we remove any variation in recovery time that could be attributed to the hospitals themselves. Since a hospital's quality of care remains fairly constant over time, we control for that influence. This leaves us with the pure effect of the new treatment program on recovery time, independent of the long-term differences between hospitals that don’t change year to year.
+
+#### Unit-Varying Fixed Effect I
+
+Now let's apply this method to our data. 
+
+#< quiz "Fixed Effects"
+question: Do you think adding the district_name, which serves as a unique ID for each municipality in our data set, would be a good candidate for a Unit-Varying Fixed Effect?
+sc: 
+    - Yes*
+    - No
+success: Good job!
+failure: Try again.
+
+#>
+
+Exactly! Adding <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">district_name</span> as a fixed effect to our model allows us to control for factors that are specific to the different municipalities but constant over time. This factors could range from socio-economic factors of the municipalities, geographic location, or the political culture of the community.
+
+Before we begin the implementation, we can first take a look at the municipalities in our treatment group and examine which ones are included. We may find that some municipalities are larger, more isolated, or economically weaker than others. If this is the case, we can control for these characteristics by adding <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">district_name</span> fixed effects. 
+
+#### Distribution of Mosques in North Rhine-Westphalia between 1980 and 2010
+
+To do this, we will plot four different maps at the municipality level of NRW for the years 1980 to 2010, indicating municipalities with a mosque. This will provide us with a better understanding of the size and distribution of our treatment group and highlight potential geographic biases.
+
+**<span style="color: orange;">Task</span>**: Press the check button to create the plots.
+
+```{r "6_3",fig.cap=''}
+#< task_notest
+nrwdb <- read_dta("NRWdb.dta")
+nrwcoord <- read_dta("NRWcoord.dta")
+
+#1980
+
+nrw1980 <- nrwdb %>%
+  filter(year==1980) 
+
+nrw1980 <- left_join(nrwcoord, nrw1980, by = "_ID") %>%  
+  mutate(dummy_mosque = as_factor(dummy_mosque)) %>%
+  ggplot(aes(x = `_X`, y = `_Y`, group = `_ID`)) +
+  geom_polygon(aes(fill = dummy_mosque), color = "white") +
+  scale_fill_manual(values = c("grey", "black")) +
+  theme_void() +
+  theme(legend.position = "none") +
+  ggtitle("1980") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+#1990
+
+nrw1990 <- nrwdb %>%
+  filter(year==1990) 
+
+nrw1990 <- left_join(nrwcoord, nrw1990, by = "_ID") %>%  
+  mutate(dummy_mosque = as_factor(dummy_mosque)) %>%
+  ggplot(aes(x = `_X`, y = `_Y`, group = `_ID`)) +
+  geom_polygon(aes(fill = dummy_mosque), color = "white") +
+  scale_fill_manual(values = c("grey", "black")) +
+  theme_void() +
+  theme(legend.position = "none") +
+  ggtitle("1990") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+#2000
+
+nrw2000 <- nrwdb %>%
+  filter(year==2000) 
+
+nrw2000 <- left_join(nrwcoord, nrw2000, by = "_ID") %>%  
+  mutate(dummy_mosque = as_factor(dummy_mosque)) %>%
+  ggplot(aes(x = `_X`, y = `_Y`, group = `_ID`)) +
+  geom_polygon(aes(fill = dummy_mosque), color = "white") +
+  scale_fill_manual(values = c("grey", "black")) +
+  theme_void() +
+  theme(legend.position = "none") +
+  ggtitle("2000") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+#2010
+
+nrw2010 <- nrwdb %>%
+  filter(year==2010) 
+
+nrw2010 <- left_join(nrwcoord, nrw2010, by = "_ID") %>%  
+  mutate(dummy_mosque = as_factor(dummy_mosque)) %>%
+  ggplot(aes(x = `_X`, y = `_Y`, group = `_ID`)) +
+  geom_polygon(aes(fill = dummy_mosque), color = "white") +
+  scale_fill_manual(values = c("grey", "black")) +
+  theme_void() +
+  theme(legend.position = "none") +
+  ggtitle("2010") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+#Abbildungen zusammenführen
+
+ggarrange(nrw1980,nrw1990,nrw2000,nrw2010)
+#>
+```
+
+As we can see, the plot shows all municipalities in North Rhine-Westphalia across four different time periods. Municipalities with a mosque are colored black, while the ones without a mosque are gray. It's important to note that this plot only includes visible mosques, which have a visible minaret and dome, as already pointed out in Chapter 2.
+
+In 1980, there were a total of eight municipalities with a mosque. This includes major cities like Dortmund, Aachen, Gelsenkirchen, and Oberhausen, as well as smaller cities with around 100,000 citizens like Bergisch Gladbach, Iserlohn, and Ratingen. They almost all have in common a relatively high population density and are characterized by industrialization. Additionally, some cities, like Dortmund, where every fifth citizen is at risk of poverty, are also known for their relatively low socio-economic status (IT.NRW, 2024, 29. April)  [SOURCE](https://www.it.nrw/armutsgefaehrdung-in-nrw).
+
+If we look at the year 1990, we can see that the number of municipalities with a mosque has more than doubled. Notable mentions are Münster and Wuppertal, both of which have populations of over 300,000 citizens. Wuppertal, in particular, is one of the largest and oldest industrial cities in NRW.
+
+Ten years later, the number of cities with a mosque increased from 19 to 30. Notable mentions include Essen, Oberhausen, and Bonn, with the first two being particularly known for their high population density and relatively low wealth.
+
+In the period from 2000 to 2010, we observed the largest increase in the number of municipalities with a mosque, rising by 21. The list now includes Cologne, the largest city in North Rhine-Westphalia. Additionally, Duisburg, known for its very high population density, significant poverty, and substantial migrant population, now also features a mosque. Furthermore, the list has expanded to include geographically more eastern cities such as Bielefeld and Gütersloh, as well as smaller cities like Hagen and Hamm.
+
+To conclude the analysis, we can observe a clear trend in the number of municipalities with a mosque across our time period of interest. Its also notable, that the list includes many large cities like Cologne, Dortmund, Essen, and Duisburg, as well as a significant number of smaller cities. Many of these municipalities are characterized by high population density and an industrial background. Additionally, most of the cities are located in central or southern North Rhine-Westphalia, with relatively few in the east. This pattern changes in 2010 with the inclusion of the cities Bielefeld and Gütersloh.
+
+This suggests there is at least a small systemic difference between the composition of our treatment and control groups. Additionally, we could observe variations within the treatment group itself, such as differences in city sizes. While we already control for these differences between the groups using the difference-in-differences (DiD) approach, adding fixed effects at the municipal level would further control for variation between all municipalities.
+
+In theory, this should significantly impact the Mosque estimator, as you would expect that the characteristic of whether a municipality has a mosque or not is also captured by this fixed effect. 
+To test this hypothesis, we can implement our first model. 
+
+The equation for this model would look as follows:
+
+$\textit{Voting Share}_{\textit{it}} = \textit{ß}_{\textit{0}} + \textit{ß}_{\textit{1}} \times \textit{Presence of a Mosque}_{\textit{it}} + \textit{ß}_{\textit{2}} \times \textit{Ramadan}_{\textit{it}} + \textit{ß}_{\textit{3}} \times \textit{Presence of a Mosque * Ramadan}_{\textit{it}} + \gamma_{\textit{i}} + \textit{u}_{\textit{it}}$
+
+The model comprises the following components:
+
+* $\textit{i}$ indicates the municipality
+* $\textit{t}$ indicates the election
+* $\textit{Voting Share}$ is the Voting Share in percent
+* $\textit{Presence of a Mosque}$ is a dummy variable that is equal to 1 for municipalities with a mosque
+* $\textit{Ramadan}$ is a binary variable, which switches to 1 if the election is within 90 days of the start of Ramadan
+* $\gamma_{\textit{i}}$ are the Fixed Effects for the municipalities. 
+* $\textit{u}$ is the error term
+
+One approach to implementing this model is to include a dummy variable for each <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">district_name</span> in the data set.
+
+This would lead us to the following regression model:
+
+$\textit{Voting Share}_{\textit{it}} = \textit{ß}_{\textit{0}} + \textit{ß}_{\textit{1}} \times \textit{Presence of a Mosque}_{\textit{it}} + \textit{ß}_{\textit{2}} \times \textit{Ramadan}_{\textit{it}} + \textit{ß}_{\textit{3}} \times \textit{Presence of a Mosque * Ramadan}_{\textit{it}} + \gamma_{1} M_{1} + \gamma_{2} M_{2} + \gamma_{3} M_{3} + \dots + \gamma_{395} M_{395} + \textit{u}_{\textit{it}}$
+
+* $\gamma_{i} M_{i}$ representing the coefficient and corresponding dummy variable for the different municipalities
+
+This method would theoretically work, but as the data set size increases, it becomes more resource-intensive. Instead, we could utilize the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">lfe</span> package and the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">felm()</span> function, which implement fixed effects in a more efficient way. 
+
+One way to incorporate fixed effects into a model without the need to create dummy variables for each unit is through the so-called "Within-Transformation". If you'd like to learn more about this method, feel free to explore the details in the note below.
+
+#! start_note "Within-Transformation"
+
+The Within-Transformation is a method used in Fixed Effects (FE) models to control for unobserved factors that could bias our estimates. This is achieved by "demeaning" the data, allowing us to isolate the variation within each unit over time.
+
+Let's take a look at the different steps involved:
+
+**Step 1** 
+
+For each unit (in our case municipality), calculate the average of all variables in the model (e.g., the outcome variable and the independent variables) across all observed time periods. This gives you a "typical" value for each variable within each unit.
+
+**Step 2**
+
+For each observation, subtract the average value of the variable from the actual observed value. This removes the influence of anything that does not vary over time within the unit, including the unit-specific fixed effect.
+
+**Step 3**
+
+Use the transformed/demeaned data to estimate the model. This new model model no longer contains the bias introduced by the time-invariant unit-specific effects, as they are eliminated in the demeaning process.
+
+For a more detailed explanation you can take a look at the textbook: Econometric Analysis of Cross Section and Panel Data from Jeffrey Wooldridge.
+
+#! end_note
+
+Next, we will implement the new model, which features the municipality as a fixed effect in R and compare it to the original DiD model.
+
+**<span style="color: orange;">Task</span>**: Fill in the missing code to implement the new model and display it alongside the previous one. To keep the task manageable, we will focus only on the left-wing parties. If you are unsure how to implement this, you can refer back to the info box of the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">lfe</span> package for guidance.
+
+```{r "6_4",results='asis'}
+#< fill_in
+
+reg_original <- felm(___ ~ dummy_mosque + ramadan + dummy_mosque*ramadan, data = NRW)
+reg_left <- felm(___ ~ dummy_mosque + ramadan + dummy_mosque*ramadan | ___, data = NRW)
+
+stargazer(reg_original, reg_left, align = TRUE, dep.var.labels = c("Left-Wing"), column.labels = c("Simple DiD-Model", "Unit-FE"), covariate.labels = c("Mosque", "Ramadan", "DiD"), add.lines=list(c("Municipality-FE", "x","✓")), type = "html")
+#>
+
+reg_original <- felm(left ~ dummy_mosque + ramadan + dummy_mosque*ramadan, data = NRW)
+reg_left <- felm(left ~ dummy_mosque + ramadan + dummy_mosque*ramadan | district_name, data = NRW)
+
+stargazer(reg_original, reg_left, align = TRUE, dep.var.labels = c("Left-Wing"), column.labels = c("Simple DiD-Model", "Unit-FE"), covariate.labels = c("Mosque", "Ramadan", "DiD"), add.lines=list(c("Municipality-FE", "x","✓")), type = "html")
+```
+
+Great job! Now, let's take a closer look at the results and discuss them in detail. The first significant change is observed when comparing the coefficient for the mosque variable. We see that the coefficient increased from 0.73 to 1.97, representing a relative increase of approximately 170%. This confirms our earlier assumption that the presence or absence of a mosque in a municipality should now be captured by the municipality fixed effect, which explains some of the variation that was previously attributed to the mosque variable. As a result, the coefficient for the mosque variable changes. We will talk about this phenomenon more detailed in a later part of this exercise again. 
+
+In contrast, the Ramadan variable shows a very small change, decreasing from 1.27 to 1.268. This is expected, as Ramadan’s effect is less likely to be also captured by the municipality fixed effect, unlike the presence of a mosque, which is an attribute of a specific municipality.
+
+Finally, let's examine the DiD estimator. This coefficient decreases by about 11.5%, from approximately 1.3 to 1.15. While this decrease is notable, it is not huge, suggesting that the interaction between mosque presence and Ramadan remains relatively stable even after controlling for municipality-specific characteristics indicating, that the interaction of mosque and Ramadan is not depended on municipality specific characteristics.
+
+#### Unit-Varying Fixed Effect II
+
+In the next part of this exercise, we aim to further refine our models. Currently, we're controlling for municipality-specific fixed effects. However, there exists a second candidate for being used as a Unit-Varying Fixed Effect: <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">election_type</span>
+
+In theory, the type of election—specifically whether it was at the federal or state level—should meet the criteria for unit-varying fixed effects. We could assume that general differences exist between these election types and these differences are constant throughout time. These differences might include variations in voting patterns, such as a tendency to vote for more extreme parties at the federal level, or differences in factors like overall voter turnout.
+
+In their paper, the authors use a fixed-effects model to control for these differences. Since there are only two election types, it should theoretically also be possible to replicate the model by adding the type of election as a control variable to the model to indicate either state or federal elections. The model will use the smaller value, with federal elections coded as 1, as the baseline level.
+
+**<span style="color: orange;">Task</span>**: Please create three models for the left-wing election results, further refining the previous model by incorporating the type of election as a fixed effect: one where you add <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">election_type</span> as a control variable, and another where you implement it as fixed effect. Additionally, include the model from before were we only added the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">district_name</span> as fixed effect to facilitate a better comparison between the models. Then, display the results side by side using the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">stargazer()</span> function. 
+
+```{r "6_5",results='asis'}
+#< fill_in
+reg_original <- felm(left ~ dummy_mosque + ramadan + dummy_mosque*ramadan | ___, data = NRW)
+reg_control <- felm(left ~ dummy_mosque + ramadan + dummy_mosque*ramadan + ___ | ___, data = NRW)
+reg_fe <- felm(left ~ dummy_mosque + ramadan + dummy_mosque*ramadan | ___ + ___, data = NRW)
+
+stargazer(reg_original, reg_control, reg_fe,align = TRUE, dep.var.labels = c("Left-Wing"), column.labels = c("Unit-FE", "Control Variable", "Election-Type-FE"), covariate.labels = c("Mosque", "Ramadan", "Election Type", "DiD"), add.lines=list(c("Municipality-FE", "✓","✓","✓"),c("Election-FE"," x","✓","✓")),type = "html") 
+#>
+
+reg_original <- felm(left ~ dummy_mosque + ramadan + dummy_mosque*ramadan | district_name, data = NRW)
+reg_control <- felm(left ~ dummy_mosque + ramadan + dummy_mosque*ramadan + election_type | district_name, data = NRW)
+reg_fe <- felm(left ~ dummy_mosque + ramadan + dummy_mosque*ramadan | district_name + election_type, data = NRW)
+
+stargazer(reg_original, reg_control, reg_fe,align = TRUE, dep.var.labels = c("Left-Wing"), column.labels = c("Unit-FE", "Control Variable", "Election-Type-FE"), covariate.labels = c("Mosque", "Ramadan", "Election Type", "DiD"), add.lines=list(c("Municipality-FE", "✓","✓","✓"),c("Election-FE"," x","✓","✓")),type = "html") 
+```
+
+Perfect! As we can see, the coefficients of the fixed effect model and the model where we added the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">election_type</span> as a control variable are identical. This indicates that both approaches produce the same results. The only difference between the models is that the one with <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">election_type</span> as a control variable also includes the type of election as a separate coefficient, which has a value of -0.477.
+
+Aside from this, we do not observe significant changes in our DiD estimator when comparing it to the model with only the municipality fixed effect. Overall, the DiD estimate decreases slightly, from 1.154 to 1.065. 
+
+#### Unit-Varying Fixed Effect III
+
+You might wonder why the authors of the paper chose to introduce <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">election_type</span> as a fixed effect rather than treating it as a control variable. The reason lies in their implementation of the combination of the 2 variables. Instead of adding the variables separately with a plus sign, as we did previously, they created a model that combines the two variables in a more specific manner.
+
+They created an interaction term of the two variables and added it as fixed effect. 
+By interacting the fixed effects (<span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">district_name</span> × <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">election_type</span>), the model allows the effect of election type to vary across different municipalities. This means that the model can capture how the combination of specific municipalities and election types might result in unique effects on the outcome variable.
+
+Technically, we calculate the Cartesian product of the two variables to account for all combinations of the 2 variables:
+
+$\text{District_name} \times \text{Election_type}$
+
+**<span style="color: orange;">Task</span>**: To wrap up this topic, let's create two models. In Model 1, we will use the specification from earlier, where we added the two types of unit-varying fixed effects separately. In Model 2, we will follow the authors' approach by interacting the two variables with each other. Please complete the empty code chunks below to implement these models.
+
+```{r "6_6",results='asis'}
+#< fill_in
+
+reg_ind <- felm(left ~ dummy_mosque + ramadan + dummy_mosque*ramadan | ___ + ___, data = NRW)
+reg_comb <- felm(left ~ dummy_mosque + ramadan + dummy_mosque*ramadan | ___:___, data = NRW)
+
+stargazer(reg_ind, reg_comb, align = TRUE, dep.var.labels = c("Left-Wing"), column.labels = c("Individual", "Interaction"), covariate.labels = c("Mosque", "Ramadan", "DiD"), add.lines=list(c("Municipality-FE","✓","✓"),c("Election-FE","✓","✓")), type = "html")
+#>
+
+reg_ind <- felm(left ~ dummy_mosque + ramadan + dummy_mosque*ramadan | district_name + election_type, data = NRW)
+reg_comb <- felm(left ~ dummy_mosque + ramadan + dummy_mosque*ramadan | district_name:election_type, data = NRW)
+
+stargazer(reg_ind, reg_comb, align = TRUE, dep.var.labels = c("Left-Wing"), column.labels = c("Individual", "Interaction"), covariate.labels = c("Mosque", "Ramadan", "DiD"), add.lines=list(c("Municipality-FE","✓","✓"),c("Election-FE","✓","✓")), type = "html")
+```
+
+Great work! As we can see, combining both variables as fixed effects does not significantly alter our estimates. The Mosque coefficient changes only slightly, from approximately 2.031 to 2.042. What mattered more was including the municipality fixed effect overall, as demonstrated in the first model. There, we observed a substantial jump in the Mosque coefficient from its original value of 0.732 in the simple DiD specification to the now significantly larger estimate of 2.042.
+
+The Ramadan coefficient, on the other hand, remains relatively stable, hovering around 1.157 across the models. Lastly, the DiD estimator decreased after introducing the interaction term and is now at its lowest value of approximately 1.05.
+
+Overall, we can conclude that the interaction of the two variables did not substantially impact our estimators.
+
+Now that we implemented both Unit-Varying Fixed Effects we can focus on the second type of fixed effects.
+
+### Time-Varying Fixed Effects
+
+Currently, we're only controlling for variation between individuals in form of municipalities and election types. However, we're missing an important component: time fixed effects. These time effects could capture historical trends or factors specific to certain election periods that may have influenced the outcomes. We can address this by incorporating the date of the election into our models, allowing us to better account for these temporal influences.
+
+Coming back to the hospital example, in addition to controlling for differences between hospitals, we now need to account for changes over time that could influence recovery times.
+
+To capture these time-varying influences, we can incorporate time-varying fixed effects into our model. One method would again be adding dummy variables for each hospital to control for hospital-specific characteristics, as well as dummy variables for each time period (such as by year or quarter) to account for factors that change over time. These time fixed effects help control for broader trends or external shocks that affect all hospitals, such as shifts in national healthcare policies, changes in patient demographics, or seasonal variations in hospital operations and care. By including these time-varying fixed effects, we can isolate the true effect of the treatment program on recovery time, free from the influence of both hospital-specific and time-dependent factors.
+
+Instead of manually adding dummy variables we will again make use of the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">felm()</span> function to add the time-variant fixed effects to the model.
+
+Please add the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">date_election</span> variable to our model from the task before to now create the Two-Way Fixed Effects model, which combines both the Unit-Varying Fixed Effects and the Time-Invariant Fixed Effects. Show it side by side with the model, which only contains the interaction term of the Unit-Varying Fixed Effects.  
+
+**<span style="color: orange;">Task</span>**: Complete the missing code chunks and create the two models. Use <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">stargazer()</span> to display the results. 
+
+```{r "6_7",results='asis'}
+#< fill_in
+
+reg_unit <- felm(left ~ dummy_mosque + ramadan + dummy_mosque*ramadan | ___:___, data = NRW)
+reg_unittime <- felm(left ~ dummy_mosque + ramadan + dummy_mosque*ramadan | ___:___ + ___, data = NRW)
+
+stargazer(reg_unit, reg_unittime, align = TRUE, dep.var.labels = c("Left-Wing"), column.labels = c("Unit-FE", "Two-Way-FE"), covariate.labels = c("Mosque", "Ramadan", "DiD"), add.lines=list(c("Municipality-FE", "✓","✓"),c("Election-FE","✓","✓"), c("Time-FE"," x","✓")), type = "html")
+#>
+
+reg_unit <- felm(left ~ dummy_mosque + ramadan + dummy_mosque*ramadan | district_name:election_type, data = NRW)
+reg_unittime <- felm(left ~ dummy_mosque + ramadan + dummy_mosque*ramadan | district_name:election_type + date_election, data = NRW)
+
+
+stargazer(reg_unit, reg_unittime, align = TRUE, dep.var.labels = c("Left-Wing"), column.labels = c("Unit-FE", "Two-Way-FE"), covariate.labels = c("Mosque", "Ramadan", "DiD"), add.lines=list(c("Municipality-FE", "✓","✓"),c("Election-FE","✓","✓"), c("Time-FE"," x","✓")), type = "html")
+```
+
+We observe that including the election date as a fixed effect significantly reduces both the Mosque coefficient and the DiD estimator. The Mosque coefficient decreases from 2.042 to 0.191, suggesting that the election date is correlated with the dummy mosque variable. This implies that the treatment group may have changed over time—a point we will explore further in the subsequent sections of this exercise.
+
+Another notable observation is that incorporating the election date as a fixed effect results in the exclusion of the Ramadan variable from the model. 
+
+The DiD estimator decreases, dropping from 1.05 to just 0.365 for left-wing parties. This suggests only a slight increase in left-wing votes for municipalities in the treatment group during Ramadan.
+
+Now let's discuss the exclusion of the Ramadan variable from the model. 
+
+#< quiz "Where is Ramadan gone?"
+question: What do you think might be the reason for this phenomenon?
+sc: 
+    - The variable Ramadan has no influence on the election outcomes
+    - The election date accounts for the variation that Ramadan would normally explain*
+success: Exactly!
+failure: Try again.
+
+#>
+
+When you include the election date as a fixed effect in the model, you control for differences due to the specific election day. If the Ramadan effect is closely related to the election date and the fixed effect captures all the variation that Ramadan might explain, then the Ramadan variable may seem to disappear. In short, the election date accounts for the variation that Ramadan would otherwise explain, making the Ramadan variable not necessary anymore.
+
+Now, with this in mind, consider the treatment indicator variable, which in our case is the mosque dummy variable. We would expect that this variable would also be fully absorbed if we added municipality fixed effects to the model. This expectation is further supported by the fact that, after adding district_name as a fixed effect in the model, the mosque coefficient changed significantly from 0.73 to 1.97. We expect this because, in theory, whether or not a municipality hosts a mosque should be an inherent attribute of that specific municipality.
+
+However, this raises the question: Why isn’t it fully absorbed like the Ramadan variable?
+
+To answer this question, we can examine how the number of municipalities with a mosque has changed over time.
+
+**<span style="color: orange;">Task</span>**: Press check to display a line chart showing the number of mosques in various municipalities over different election dates.
+
+```{r "6_8",fig.cap=''}
+#< task_notest
+NRW %>% filter(dummy_mosque==1) %>%
+  group_by(date_election) %>%
+  summarise(NumberOfMosques = n()) %>%
+  ggplot(aes(x=date_election, y=NumberOfMosques)) +
+  geom_line() +
+  theme_minimal()+
+  ggtitle("Number of Mosques throughout the time") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("Election dates") +
+  ylab("Number of Mosques")
+#>
+```
+
+The plot clearly shows that the number of mosques changes over time, meaning that the treatment group increases with each subsequent election. Remember that the inclusion of the election date as a fixed effect impacted the mosque coefficient. This change is a key reason why we observed a shift in the coefficient for mosques after controlling for the election date.
+
+This situation is somewhat atypical in a standard DiD approach, where we typically assume that the treatment and control groups remain constant throughout the study period. This brings us back to the unique role of fixed effects in a DiD setup, as discussed in the introduction of this chapter.
+
+In general, when introducing a Two-Way Fixed Effects model into a DiD approach, the variable indicating the pre- and post-treatment phases is fully absorbed because the time-fixed effects explain this variation. Similarly, the variable indicating whether an individual belongs to the treatment group or not is fully absorbed by the unit-fixed effects, which account for time-invariant differences across units.
+
+However, in our case, the composition of the treatment group changes over time as the number of mosques increases. This  prevents the coefficient of interest from being fully absorbed by the fixed effects.
+
+In the real world, many factors can influence the composition of treatment and control groups over time, which is why we see this kind of shift in our analysis.
+
+In the next chapter, we’ll explore what happens when attributes captured by fixed effects are not constant over time but instead change, and how this might affect our analysis and results.
+
+## Exercise 6 -- Introducing Time-Variant Control Variables into the Model
+
+It is necessary to load the data set <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">NRW</span> at the beginning of every exercise. Please press the check button.
+
+```{r "7_1"}
+#< task_notest
+NRW <- readRDS("NRW_final.rds")
+NRW <- NRW %>%
+  mutate(ramadan = ifelse(date_election >= ramadan_start & date_election - ramadan_start <=90,1,0),
+         district_name = as.factor(district_name),
+         election_type = as.factor(election_type))
+#>
+```
+
+At the end of Exercise 4, we learned how to incorporate fixed effects into our models. While fixed effects are valuable for controlling unobserved, fixed characteristics, they do come with some limitations. In this chapter, we will systematically identify the issues that arise with the addition of unit-varying fixed effects and explore methods to address them.
+
+We will begin with an exploratory analysis of municipality-specific characteristics.
+
+Our <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">NRW</span> data set includes four variables containing information about municipalities. 
+
+These variables are:
+
+* share_female
+* pop_density
+* share_foreign
+* log_emp
+
+To begin with, we aim to analyze the variability of these variables within each district over time. This analysis involves comparing the minimum/maximum values of each variable and the standard deviation . For the purpose of this exercise, we will only focus on one of the four variables: <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">share_foreign</span>
+
+Let's start, by grouping the data by <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">district_id</span> and then calculate the minimum/maximum values and the standard deviation of <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">share_foreign</span> for each district. This approach will allow us to assess how much <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">share_foreign</span> varies within each district over time and provide insights into the temporal stability or changes of this variable. 
+
+**<span style="color: orange;">Task</span>**: Please fill in the blanks to create the grouped data. To calculate the minimum and maximum values, you can use the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">min()</span> and <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">max()</span> functions. In addition to computing the min and max, we also want to calculate the standard deviation. You can calculate the standard deviation in R by using the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">sd()</span> function.
+
+```{r "7_2"}
+#< fill_in
+
+share_foreign_minmax <- NRW %>%
+  group_by(___) %>%
+  summarize(Minimum = ___(share_foreign, na.rm = TRUE),
+            Maximum = ___(share_foreign, na.rm = TRUE),
+            SD = ___(___, na.rm = TRUE)) %>%
+  arrange(desc(SD))
+
+share_foreign_minmax %>% head(10) %>% kbl() %>%
+  kable_styling()
+#>
+
+share_foreign_minmax <- NRW %>%
+  group_by(district_name) %>%
+  summarize(Minimum = min(share_foreign, na.rm = TRUE),
+            Maximum = max(share_foreign, na.rm = TRUE),
+            SD = sd(share_foreign, na.rm = TRUE)) %>%
+  arrange(desc(SD))
+
+share_foreign_minmax %>% head(10) %>% kbl() %>%
+  kable_styling()
+
+```
+
+Great job! The table displays the minimum, maximum, and standard deviation for each district, sorted in descending order by standard deviation. It is evident that District 318 has the highest standard deviation, at approximately 11.26, among all municipalities. During our observation period, we can see that the share of the foreign population in this district was as low as 2.83 percent at one point and reached a maximum value of around 34.73 percent, indicating a very significant change. This equates to a relative change of approximately 1127.20 percent.
+
+Let's continue our investigation by taking a closer look at the change of the variable <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">share_foreign</span> for District 318 over the years.
+
+**<span style="color: orange;">Task</span>**: Complete the code below to plot the share of foreign citizens for district 318 over time.
+
+```{r "7_3",fig.cap=''}
+#< fill_in
+NRW %>% filter(district_name == ___) %>%
+  ggplot(aes(x=___, y=___)) +
+  geom_line() +
+  labs(x="Years", y="Share of foreign citzizens in %") +
+  ggtitle("Change of share_foreign in District 318") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+#>
+
+NRW %>% filter(district_name == 318) %>%
+  ggplot(aes(x=year, y=share_foreign)) +
+  geom_line() +
+  labs(x="Years", y="Share of foreign citzizens in %") +
+  ggtitle("Change of share_foreign in District 318") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+Between 1980 and 1990, the share of foreign citizens in District 318 remained relatively stable at around 4 percent. However, after 1990, there was a continuous increase in the share of foreign citizens, which lasted until the early 2000s. This trend can likely be attributed to the late migration waves in the 1990s, primarily from Poland, Romania, and the Soviet Union (Landeszentrale für politische Bildung Nordrhein-Westfalen, 2024, 23. November) [SOURCE](https://www.politische-bildung.nrw.de/veranstaltungen/aktuelle-veranstaltungen/details/event/geschichte-der-zuwanderung-in-nrw-2021-11-23).
+The plot also shows a decline in this share until 2005, followed by a rapid increase, reaching its peak of around 35 percent in 2010. 
+
+Overall, we can conclude that the share of foreign citizens in District 318 was quite dynamic and increased significantly over the years.
+
+#< quiz "Fixed Effects not fix?"
+question: Now, if you think back and recall the explanation of unit-varying fixed effects, what do you think could be a potential problem with our model?
+sc: 
+    - The fixed effects model assumes that the foreigner quota is constant over time within each district, but in reality, it changes, which could lead to biased estimators*
+    - The fixed effects model assumes that the foreigner quota is the same across all districts, which could lead to incorrect conclusions.
+success: Exactly!
+failure: Try again.
+
+#>
+
+The key characteristic of unit-varying fixed effects is that they assume certain attributes are constant within each unit over time. However, this assumption can be problematic when dealing with attributes of municipalities, which change over the years, such as the share of the foreign population.
+
+In such cases, unit-varying fixed effects might not fully capture the impact of these time-varying factors on the outcome variable. This limitation can result in biased estimates.
+
+We can solve this problem by adding these time-varying variables as control variables to our models.
+
+**<span style="color: orange;">Task</span>**: Press check to execute the code and generate the new model, which includes the four control variables mentioned earlier. For comparison purposes, the final model from the previous exercise, where different types of fixed effects were added, will also be displayed. This analysis is once again focused exclusively on left-wing parties.
+
+```{r "7_4",results='asis'}
+#< task_notest
+
+reg_left1 <- felm(left ~ dummy_mosque + ramadan + dummy_mosque*ramadan | district_name:election_type + date_election, data = NRW)
+reg_left2 <- felm(left ~ dummy_mosque + ramadan + dummy_mosque*ramadan+share_female+share_foreign+pop_density+log_emp | district_name:election_type + date_election, data = NRW)
+
+stargazer(reg_left1, reg_left2, align = TRUE, dep.var.labels = c("Left-Wing"), column.labels = c("W/o controls", "W controls"), covariate.labels = c("Mosque", "", "Share Female", "Share Foreign", "Pop Density", "Log Emp", "DiD"), add.lines=list(c("Municipality-FE", "✓","✓" ),c("Election-FE", "✓","✓"), c("Time-FE","✓","✓"),c("Municipality Controls","X","✓")),type = "html")
+#>
+```
+
+By examining the table and comparing the two models, we observe that the Mosque coefficient and the DiD coefficient change only marginally. The Mosque estimator decreases slightly from 0.191 to 0.168. Similarly, the DiD estimator is reduced from 0.365 to 0.353, indicating a minimal impact of minority salience on left-wing election outcomes in municipalities with a mosque. The relative stability of the DiD estimator suggests that our estimates are largely independent of the municipality characteristics included as control variables.
+
+With our final model now established, we can expand the analysis to include the other parties in the data set. This will be explored in the next exercise.
+
+## Exercise 7 -- Interpreting the Results
+
+It is necessary to load the data set <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">NRW</span> at the beginning of every exercise. Please press the check button.
+
+```{r "8_1"}
+#< task_notest
+NRW <- readRDS("NRW_final.rds")
+NRW <- NRW %>%
+  mutate(ramadan = ifelse(date_election >= ramadan_start & date_election - ramadan_start <=90,1,0),
+         district_name = as.factor(district_name),
+         election_type = as.factor(election_type))
+#>
+```
+
+Having completed exercises 4, 5, and 6, we have gradually refined our initial model by incorporating fixed effects and additional control variables. Now, we can interpret the results for all parties. Before starting the analysis, however, we need to create four models, each corresponding to a different dependent variable. 
+
+**<span style="color: orange;">Task</span>**: Press the check button to create the models.
+
+```{r "8_2",results='asis'}
+#< task_notest
+
+reg_right <- felm(right ~ dummy_mosque + ramadan + dummy_mosque*ramadan+share_female+share_foreign+pop_density+log_emp | district_name:election_type + date_election, data = NRW)
+reg_left <- felm(left ~ dummy_mosque + ramadan + dummy_mosque*ramadan+share_female+share_foreign+pop_density+log_emp | district_name:election_type + date_election, data = NRW)
+reg_established <- felm(establish ~ dummy_mosque + ramadan + dummy_mosque*ramadan+share_female+share_foreign+pop_density+log_emp | district_name:election_type + date_election, data = NRW)
+reg_turnout <- felm(turnout ~ dummy_mosque + ramadan + dummy_mosque*ramadan+share_female+share_foreign+pop_density+log_emp | district_name:election_type + date_election, data = NRW)
+
+stargazer(reg_right, reg_left, reg_established, reg_turnout, align = TRUE, dep.var.labels = c("Right-Wing", "Left-Wing", "Established", "Turnout"), covariate.labels = c("Mosque", "", "DiD"), add.lines=list(c("Municipality-FE", "✓","✓","✓","✓"  ),c("Election-FE", "✓","✓","✓","✓" ), c("Time-FE","✓","✓","✓","✓" ),c("Municipality Controls","✓","✓","✓","✓")), omit = c("share_female","share_foreign", "pop_density", "log_emp"),  notes = "The municipality control variables are not shown in the table to improve the readability" ,type = "html")
+#>
+```
+
+The analysis reveals that the increased salience of minority issues during Ramadan has a significant and positive effect on the election results for both left-wing and right-wing parties in municipalities that feature a mosque. For right-wing parties, we observe a DiD estimator of 0.117, suggesting that when an election is affected by Ramadan in a municipality with a mosque, the voting share of right-wing parties increases by approximately 0.117 percentage points.
+
+For left-wing parties, the observed effect is even more pronounced. The DiD estimator indicates an increase of 0.353 percentage points in the voting share, suggesting that left-wing parties gain significantly more support under similar conditions.
+
+However, these gains in vote share must come at the expense of other parties. One plausible explanation is that when both left- and right-wing parties gain traction, it is the established parties that lose support. This hypothesis is supported by our results, where the established parties exhibit a strongly negative DiD estimator of -1.029. This substantial coefficient implies a loss of approximately 1.029 percentage points in vote share for established parties in elections affected by Ramadan in municipalities within the treatment group.
+
+Additionally, we observe a decline in voter turnout, with a DiD estimator of -0.376. This indicates a decrease in voter participation by approximately 0.376 percentage points.
+
+Having completed our main analysis, we now turn to exploring dynamic effects.
+On top of that, we check whether increased minority salience during Ramadan could lead to heightened political violence and hate crimes.
+
+## Exercise 8 -- Dynamic Effects of Voting Behavior and Hate Crimes
+
+It is necessary to load the data set <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">NRW</span> at the beginning of every exercise. Please press the check button.
+
+```{r "9_1"}
+#< task_notest
+NRW <- readRDS("NRW_final.rds")
+NRW <- NRW %>%
+  mutate(ramadan = ifelse(date_election >= ramadan_start & date_election - ramadan_start <=90,1,0),
+         district_name = as.factor(district_name),
+         election_type = as.factor(election_type))
+#>
+```
+
+The final exercise in this problem set is divided into three parts. The first part focuses on the dynamic effects of voting behavior, while the second part examines the relationship between our treatment and the twitter tweets of specific politcal parties. Part three will investigate, whether increased minority salience is linked with an increase in political hate crimes.
+
+In the first part, we will explore how our estimators change when we adjust the time periods after the start of Ramadan. After that, we will investigate whether there is a link between political hate crimes and the increased visibility of minority groups during Ramadan.
+
+### Dynamic Effects 
+
+In this section of the chapter, we will dive into the analysis of dynamic effects. To simplify our approach and remain within the time and effort limits of this problem set, we will focus exclusively on right wing parties. Our primary aim is to explore how variations in the definition of the Ramadan variable can impact the effect size of our estimators.
+
+We will start by revisiting the criteria used to define Ramadan in the previous chapters. Specifically, we will assess how adjusting the time window around Ramadan might alter the observed effects on voting behavior. This includes examining whether shortening or lengthening the time window reveals any significant trends or changes in the impact of Ramadan. By understanding these dynamic effects, we hope to gain deeper insights into how the timing of elections relative to Ramadan influences voter behavior.
+
+#< quiz "Definition of Ramadan"
+question: Do you recall how we defined the Ramadan variable in the previous chapters?
+sc: 
+    - Ramadan is 1 if the election took part 45 days after the beginning of Ramadan.
+    - Ramadan is 1 if the election took part 90 days after the beginning of Ramadan.*
+    - Ramadan is 1 if the election took part 135 days after the beginning of Ramadan.
+success: Exactly!
+failure: Try again.
+
+#>
+
+We define an election as influenced by Ramadan if it takes place within 90 days of the start of Ramadan. We are now also interested in exploring whether the effect changes when we adjust this time window and whether there may be a discernible trend.
+
+#< quiz "Ramadan Trends"
+question: If you think about it, what trend would you expect when varying the time windows?
+sc: 
+    - The effect of minority salience remains constant and is unaffected by different time windows.
+    - The impact on voting behavior is likely strongest immediately following Ramadan.*
+    - As more time passes after Ramadan, the effect on voting behavior may intensify further.
+success: Correct!
+failure: Try again.
+
+#>
+
+You would expect that as more time passes since the beginning of Ramadan, the effect size decreases. This could be because the period immediately following Ramadan typically sees the highest levels of religious activity and public engagement, which brings Ramadan prominently into the public's focus. Over time, however, other issues and topics start to regain attention, and the interest in Ramadan-related matters gradually diminishes. As a result, the impact of Ramadan on voting behavior is likely to be strongest right after the end of Ramadan and decrease as the days go by.
+
+To determine whether this assumption holds true, we will now examine the variations in effect size.
+
+**<span style="color: orange;">Task</span>**: In this task, we will add five Ramadan variables to our data set, each corresponding to a different time window. This will result in the creation of five new variables, each representing one of the time windows detailed below:
+
+* 45 days 
+* 75 days
+* 90 days
+* 120 days
+* 160 days
+
+Please fill in the empy code chunks to solve this task.
+
+```{r "9_2"}
+#< fill_in
+NRW <- NRW %>%
+  mutate(ramadan45 = ifelse(distance_ramadan <=___,1,0),
+         ramadan75 = ifelse(distance_ramadan <=___,1,0),
+         ramadan90 = ifelse(distance_ramadan <=___,1,0),
+         ramadan120 = ifelse(distance_ramadan <=___,1,0),
+         ramadan160 = ifelse(distance_ramadan <=___,1,0)
+  )
+#>
+
+NRW <- NRW %>%
+  mutate(ramadan45 = ifelse(distance_ramadan <=45,1,0),
+         ramadan75 = ifelse(distance_ramadan <=75,1,0),
+         ramadan90 = ifelse(distance_ramadan <=90,1,0),
+         ramadan120 = ifelse(distance_ramadan <=120,1,0),
+         ramadan160 = ifelse(distance_ramadan <=160,1,0)
+  )
+```
+
+Well done! Now that we have added the new variables to our dataset, we can proceed with estimating our models. We will use the same specifications as at the end of Chapter 6. This means including specific municipal variables as control variables, and applying fixed effects for <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">election_type</span>, <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">district_name</span>, and <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">election_date</span>.
+
+**<span style="color: orange;">Task</span>**: Press the check button to run the code. This code generates the models and stores them in a dataframe, while also extracting the 95% confidence intervals. If you are unfamiliar with what a confidence interval is, please refer to the note below for an explanation.
+
+#! start_note "Confidence Interval"
+
+A confidence interval is a range of values that, with a specified probability, is likely to contain the true value of a statistical parameter. In our case, the parameter of interest is the difference-in-differences (diff-diff) estimator from our model. For example, if we use a 95% confidence interval, we can say that there is a 95% probability that the true estimator falls within this interval.
+
+To calculate a confidence interval, use the following formula:
+
+$\text{Confidence Interval} = \left( \hat{\beta} - t \cdot \text{SE}(\hat{\beta}), \; \hat{\beta} + t \cdot \text{SE}(\hat{\beta}) \right)$
+
+* $\hat{\beta}$ Estimator
+* $t$ t-Score
+* $\text{SE}(\hat{\beta})$ Standard Error of the estimator
+* $n$ Sample Size 
+
+The width of the confidence interval is influenced by the standard error of the estimator, the sample size, and the chosen confidence level. A smaller standard error results in a narrower confidence interval, indicating a more precise estimate. Additionally, a larger sample size tends to reduce the interval width, as it provides more information about the parameter.
+
+Now let's talk about how the chosen confidence level affects the width of the interval.
+
+#< quiz "Confidence Intervals"
+question: What do you think happens if we increase the confidence level of our interval?
+sc: 
+    - The confidence interval gets wider.*
+    - The confidence interval gets more narrow.
+success: Correct!
+failure: Try again.
+
+#>
+
+Regarding the confidence level, a higher confidence level (e.g., 99% versus 95%) increases the interval width. This is because a higher confidence level requires a wider range to ensure that the true parameter value is included with greater certainty. Conversely, a lower confidence level results in a narrower interval but with less certainty about containing the true value.
+
+#! end_note
+
+```{r "9_3"}
+#< task_notest
+
+reg45 <- reg_right <- felm(right ~ dummy_mosque+dummy_mosque*ramadan45+share_female+share_foreign+pop_density+log_emp | election_type:district_name + date_election, data = NRW)
+
+reg75 <- reg_right <- felm(right ~ dummy_mosque+dummy_mosque*ramadan75+share_female+share_foreign+pop_density+log_emp | election_type:district_name + date_election, data = NRW)
+
+reg90 <- reg_right <- felm(right ~ dummy_mosque+dummy_mosque*ramadan90+share_female+share_foreign+pop_density+log_emp | election_type:district_name + date_election, data = NRW)
+
+reg120 <- reg_right <- felm(right ~ dummy_mosque+dummy_mosque*ramadan120+share_female+share_foreign+pop_density+log_emp | election_type:district_name + date_election, data = NRW)
+
+reg160 <- reg_right <- felm(right ~ dummy_mosque+dummy_mosque*ramadan160+share_female+share_foreign+pop_density+log_emp | election_type:district_name + date_election, data = NRW)
+
+#Modelsummary
+
+model1 <- summary(reg45)
+model2 <- summary(reg75)
+model3 <- summary(reg90)
+model4 <- summary(reg120)
+model5 <- summary(reg160)
+
+#Coef
+
+coef1 <- coef(reg45)
+coef2 <- coef(reg75)
+coef3 <- coef(reg90)
+coef4 <- coef(reg120)
+coef5 <- coef(reg160)
+
+#Model 1
+
+estimate1 <- model1$coefficients[7]
+se1 <- model1$coefficients[7,2]
+nobs1 <- length(reg45$residuals)
+qt1 <- qt(0.095, df = nobs1-length(coef1), lower.tail = FALSE)
+lower1 <- estimate1 - qt1*se1 
+upper1 <- estimate1 + qt1*se1 
+
+#Model 2
+
+estimate2 <- model2$coefficients[7]
+se2 <- model2$coefficients[7,2]
+nobs2 <- length(reg75$residuals)
+qt2 <- qt(0.095, df = nobs2-length(coef2), lower.tail = FALSE)
+lower2 <- estimate2 - qt2*se2
+upper2 <- estimate2 + qt1*se2 
+
+#Model 3
+
+estimate3 <- model3$coefficients[7]
+se3 <- model3$coefficients[7,2]
+nobs3 <- length(reg90$residuals)
+qt3 <- qt(0.095, df = nobs3-length(coef3), lower.tail = FALSE)
+lower3 <- estimate3 - qt3*se3
+upper3 <- estimate3 + qt3*se3
+
+#Model 4
+
+estimate4 <- model4$coefficients[7]
+se4 <- model4$coefficients[7,2]
+nobs4 <- length(reg120$residuals)
+qt4 <- qt(0.095, df = nobs4-length(coef4), lower.tail = FALSE)
+lower4 <- estimate4 - qt4*se4
+upper4 <- estimate4 + qt4*se4
+
+#Model 5
+
+estimate5 <- model5$coefficients[7]
+se5 <- model5$coefficients[7,2]
+nobs5 <- length(reg160$residuals)
+qt5 <- qt(0.095, df = nobs5-length(coef5), lower.tail = FALSE)
+lower5 <- estimate5 - qt5*se5
+upper5 <- estimate5 + qt5*se5
+
+#Add row to Dataframe
+
+result <- data.frame(DaysSinceRamadan = integer(), Estimate = double(), lower005 = double(), upper005 = double())
+
+result[1,] <- c(45, estimate1, lower1, upper1)
+result[2,] <- c(75, estimate2, lower2, upper2)
+result[3,] <- c(90, estimate3, lower3, upper3)
+result[4,] <- c(120, estimate4, lower4, upper4)
+result[5,] <- c(160, estimate5, lower5, upper5)
+result[6,] <- c(-30, NA, NA, NA)
+result[7,] <- c(0, NA, NA, NA)
+
+result <- result %>%
+  mutate(DaysSinceRamadan = as.integer(DaysSinceRamadan), Estimate = as.double(Estimate), lower005 = as.double(lower005), upper005 = as.double(upper005))
+
+#>
+```
+
+**<span style="color: orange;">Task</span>**: With the necessary data in hand, we can now visualize our coefficients using the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">ggplot()</span> function. The goal is to plot the different models along with the number of days on the x-axis and the corresponding coefficients on the y-axis. Additionally, we will include the  confidence intervals calculated in the step before. 
+
+Hint: The variable <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">DaysSinceRamadan</span> contains the different models and <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">Estimate</span> is the column, which stores their estimates.
+
+Fill in the code gaps to create the plot.
+
+```{r "9_4",fig.cap=''}
+#< fill_in
+
+___ %>%
+  ggplot(aes(x = ___, y = ___)) +
+  geom_point() +
+  scale_x_continuous(breaks = c(-30,0,45,75,90,120,160)) +
+  geom_errorbar(aes(x = DaysSinceRamadan, ymin = lower005, ymax = upper005), color = "grey", width = 0, size = 0.75) +
+  theme_classic() +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
+  geom_hline(yintercept = 0) +
+  xlab("Days after the start of Ramadan") +
+  ylab("Ramadan x Mosque") +
+  ggtitle("Right Wing")
+
+
+#>
+
+result %>%
+  ggplot(aes(x = DaysSinceRamadan, y = Estimate)) +
+  geom_point() +
+  scale_x_continuous(breaks = c(-30,0,45,75,90,120,160)) +
+  geom_errorbar(aes(x = DaysSinceRamadan, ymin = lower005, ymax = upper005), color = "grey", width = 0, size = 0.75) +
+  theme_classic() +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
+  geom_hline(yintercept = 0) +
+  xlab("Days after the start of Ramadan") +
+  ylab("Ramadan x Mosque") +
+  ggtitle("Right Wing")
+
+```
+
+Let's talk about the results of our plot. We observe that 45 days after the end of Ramadan, the effect of minority salience on voting behavior appears to be strongest, with an estimated coefficient of around 0.15. As 30 more days pass, this effect decreases by approximately 0.01, bringing the effect size to about 0.13. After 90 days, the coefficient is 0.12, which then drops significantly over the next 30 days. By day 120, the effect is reduced to 0.07, and by day 160, it further declines to just 0.03.
+
+Overall, we see a clear trend: for right-wing parties, the coefficient steadily decreases as more time passes since the start of Ramadan. This reinforces our earlier assumption that, as time progresses, the attention on and political polarization surrounding minorities diminishes and therefore doesnt affect the voting patterns that much.
+
+Finishing this part of Exercise 6 we can now jump to the second part, which will focus on the link between our treatment and the volume of twitter tweets posted by right and left wing parties.
+
+### Twitter activity of right and left wing parties
+
+Social media has become a powerful tool for political parties to communicate with potential voters and convey their political messages. By 2024, nearly all political parties utilize social media platforms like Facebook, Twitter (now X), and TikTok as integral parts of their campaigns, each platform tailored to reach different demographic groups and user profiles.
+
+In some cases, social media posts can generate significant public attention—either positive or negative. For example, the Esslingen chapter of the Alternative für Deutschland (AfD) caused a controversy in 2024 by posting an image generated by artificial intelligence that mocked Ramadan, resulting in a significant backlash online (Pfäfflin P., 2024, 14. March) [SOURCE](https://www.swr.de/swraktuell/baden-wuerttemberg/stuttgart/afd-esslingen-post-grillfest-100.html). This is just one of many incidents highlighting how social media can stir public discourse, which is a central focus of this chapter. 
+
+The primary aim of this chapter is to investigate whether there is a noticeable change in the volume of tweets from the parties Alternative für Deutschland and Die Linke during Ramadan, analyzing any potential shifts in their messaging or engagement on Twitter during this period. We should also consider that any shifts in Twitter behavior, if they exist, could potentially influence voting patterns among citizens. Changes in social media activity, whether in tone, frequency, or content, may have a direct or indirect impact on how voters perceive political parties, which in turn could affect their voting decisions. Therefore, analyzing these patterns may provide insight into broader electoral dynamics.
+
+Let's begin the analysis by creating a plot that visualizes the number of tweets from the two political parties over time
+
+**<span style="color: orange;">Task</span>**: Start with loading the data <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">NRW_twitter.dta</span> into the variable <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">Twitter</span>. The data contains information from 25. April to 24. August 2018. Its a dta file, which means that you can use the function <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">read_dta()</span> to complete the task. 
+
+```{r "9_5"}
+#< task
+
+#>
+
+Twitter <- read_dta("NRW_twitter.dta")
+
+```
+
+Well done! In the next step, we will prepare the data for our plot. Since you have already completed a similar task in exercise 2, the solution code is already available and no changes need to be made. 
+
+**<span style="color: orange;">Task</span>**: Press check to create the prepared data. 
+
+```{r "9_6"}
+#< task_notest
+Twitter_event <- Twitter %>%
+  group_by(week_date) %>% 
+  mutate(Meanright = sum(related_right, na.rm = TRUE),
+            Meanleft = sum(related_left, na.rm = TRUE)) 
+
+#>
+```
+
+**<span style="color: orange;">Task</span>**: Fill in the missing code to plot the twitter volume. 
+
+```{r "9_7",fig.width=12, fig.height=6, fig.cap=''}
+#< fill_in
+Twitter_event %>% 
+  ggplot(aes(x = ___)) + 
+  geom_line(aes(y = Meanright, color = "Alternative für Deutschland")) +
+  geom_line(aes(y = Meanleft, color = "Die Linke")) +
+  geom_vline(xintercept = c(20, 24), linetype = "dashed") +
+  labs(x = "Date", y = "Muslim Tweets", color = "Political Party") +
+  ggtitle("Tweets by Cities") +
+  scale_x_continuous(breaks = c(17, 20, 24, 34), 
+                     labels = c("April", "Start Ramadan", "End Ramadan", "August")) +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme_minimal()
+#>
+
+Twitter_event %>% 
+  ggplot(aes(x = week_date)) + 
+  geom_line(aes(y = Meanright, color = "Alternative für Deutschland")) +
+  geom_line(aes(y = Meanleft, color = "Die Linke")) +
+  geom_vline(xintercept = c(20, 24), linetype = "dashed") +
+  labs(x = "Date", y = "Muslim Tweets", color = "Political Party") +
+  ggtitle("Tweets by Cities") +
+  scale_x_continuous(breaks = c(17, 20, 24, 34), 
+                     labels = c("April", "Start Ramadan", "End Ramadan", "August")) +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme_minimal()
+
+```
+
+For the party Die Linke, we observe a relatively stable pattern throughout the period displayed in the plot. Notably, there is a slight increase starting at the end of April, with tweet volume rising from around 100 tweets per week to a peak of approximately 1,000 tweets near the end of Ramadan. After this peak, the Twitter activity steadily declines, reaching around 250 tweets per week by August.
+
+In contrast, the first significant difference between the two parties is evident in the Alternative für Deutschland's (AfD) twitter activity. AfD starts with around 1,000 tweets per week in April and maintains a higher level of Twitter activity overall. Unlike Die Linke, AfD's tweet volume rises significantly in preparation for Ramadan, peaking at around 5,000 tweets per week shortly after Ramadan ends. This peak is followed by a sharp drop, with tweet volume dropping to approximately 250 tweets by early August, before rising back to nearly 2,000 tweets at the end of August.
+
+From this, we can conclude that Alternative für Deutschland notably intensifies its Twitter activity before, during, and immediately after Ramadan, and remains generally more active on the platform than Die Linke throughout the observation period.
+
+This topic becomes even more interesting when we consider the influence that Twitter and social media can have on the behavior of followers. A popular example of this is the storming of the U.S. Capitol in January 2021. Investigations suggest that a particular tweet from Donald Trump on December 19, stating, "Big protest in D.C. on January 6th. Be there, will be wild!" may have played a role in motivating demonstrators, potentially inciting the shift towards violence (Süddeutsche Zeitung, 2022, 12. July) [SOURCE](https://www.sueddeutsche.de/politik/usa-trump-kapitol-1.5620137).
+
+Given the importance of politically motivated crime, the next chapter will focus on this specific issue and its connection to the heightened visibility of minority groups during Ramadan. We will explore how this period may influence the occurrence and nature of such crimes.
+
+### Minority Salience and Hate Crimes
+
+According to the Bundeskriminalamt, politically motivated crimes in Germany reached a record high in 2023, with a total of 60,028 reported incidents—an increase of 1.89% compared to the previous year (Bundeskriminalamt, 2024, 21. May) [SOURCE](https://www.bka.de/DE/Presse/Listenseite_Pressemitteilungen/2024/Presse2024/240521_PM_Fallzahlen_PMK2023.html). Additionally, there has been a significant rise in anti-Semitic offenses. In 2022, around 2,641 such incidents were recorded, 88 of which were violent. Alarmingly, this figure nearly doubled in 2023, reaching 5,164 offenses, including 148 violent crimes (Statista, 2024, May) [SOURCE](https://www.statista.com/statistics/961796/anti-semitic-offences-recorded-by-the-police-in-germany/).
+
+The primary objective of this chapter is to create a linear model that estimates the effect of Ramadan on attacks targeting mosques.
+
+**<span style="color: orange;">Task</span>**: First, we need to load the data set, which contains information on anti-Muslim offenses in Germany between January 2001 and December 2011. These offenses range from acts of vandalism and the painting of prohibited symbols, such as swastikas, to more severe crimes like death threats and arson.
+
+To proceed with loading the data, please press the check button.
+
+```{r "9_8"}
+#< task_notest
+Attacks <- read_dta("ATTACKS.dta")
+#>
+```
+
+**<span style="color: orange;">Task</span>**: Now that the data set has been loaded, let’s take a quick look at it. Use the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">head()</span> function to display the first few rows of the data.
+
+```{r "9_9"}
+#< task
+
+#>
+head(Attacks)
+```
+
+The data set includes three variables: the date of observation, the number of anti-Muslim offenses, and the number of days since Ramadan, relative to the observation date.
+
+As in the initial DiD Model we want to define the variable <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">ramadan</span> as 1 if less than 90 days passed after the start of ramadan. 
+
+**<span style="color: orange;">Task</span>**: Please fill in the blanks to create a new variable named <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">ramadan</span>. The code also creates several other variables, which later in the model will be used as control variables.
+
+```{r "9_10"}
+#< fill_in
+Attacks <- Attacks %>%
+  mutate(ramadan = ifelse(___ <= ___ & daysince >= 0,___,___),
+         month = month(date), 
+         year = year(date),
+         day = wday(date),
+         day_of_year = yday(date))
+#>
+
+Attacks <- Attacks %>%
+  mutate(ramadan = ifelse(daysince <= 90 & daysince >= 0,1,0),
+         month = month(date), 
+         year = year(date),
+         day = wday(date),
+         day_of_year = yday(date))
+```
+
+Well done! Now its time to create the model. We will utilize the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">felm()</span> function to create a model, which also incorporates the day of the week, the of the year and an interaction term between month and year as fixed effects.
+
+**<span style="color: orange;">Task</span>**: Complete the missing code chunks to create the model. The coefficients of the model will then be shown using the <span style="background-color: #e0e0e0; padding: 2px 4px; border-radius: 3px; color: #DF0334;">stargazer()</span> function.
+
+```{r "9_11",results='asis'}
+#< fill_in
+attacks_reg <- felm(___ ~ ___ | as.factor(day) + as.factor(day_of_year) + as.factor(month):as.factor(year), data = Attacks)
+stargazer(attacks_reg, align = TRUE, dep.var.labels = c("Attacks"), covariate.labels = c("Ramadan"), type = "html")
+#>
+
+attacks_reg <- felm(n_attacks ~ ramadan | as.factor(day) + as.factor(day_of_year) + as.factor(month):as.factor(year), data = Attacks)
+stargazer(attacks_reg, align = TRUE, dep.var.labels = c("Attacks"), covariate.labels = c("Ramadan"), type = "html")
+```
+
+According to the model, we can observe that the probability of offenses against Muslims increases during the 90 days following the start of Ramadan. More precisely, the chance of such offenses is approximately 4 percentage points higher during this period.
+
+In the original paper, the authors improve this model by adding a variable that accounts for attacks occurring the day before Ramadan, allowing to control for the increased police activity and thereby heightend security measures potentially preventing later attacks. Additionally, they split the Ramadan variable into two separate time windows: the first 30 days, which corresponds to the actual month of Ramadan, and the following 60 days. This division helps analyze whether the increase in offenses is concentrated during Ramadan itself or whether the effects continue in the months immediately after.
+
+They also introduce placebo tests to the model, where the authors examine time periods unrelated to Ramadan to ensure the observed patterns are not coincidental or influenced by external factors. These tests are crucial for validating the robustness of the findings.
+
+Unfortunately, these analyses would exceed the limit of this problem set, but if you are interested, you are ofcourse always encouraged to take a look at the original paper.
+
+## Exercise 9 -- Conclusion 
+
+To finish the problem set, we will now provide a detailed recap of the key concepts and findings from each of the previous exercises.
+
+**<span style="color: orange;">Exercise 1</span>**: This exercise was designed to introduce you to R and provide useful insights into the data set used throughout this problem set. We discovered that our main data set contains information on municipalities in North Rhine-Westphalia (NRW). This panel data includes 15 variables, covering everything from election results to municipality-specific characteristics and data on Ramadan over the years from 1980 to 2010.
+
+**<span style="color: orange;">Exercise 2</span>**: We continued by exploring whether Ramadan truly increases the salience of minorities in municipalities. To test this theory, we analyzed Google search trends related to Muslim topics and observed changes in search volume during Ramadan. Our analysis showed that the number of searches increased after Ramadan, supporting our hypothesis. Additionally, we found that municipalities with a mosque experienced a greater increase in search volume compared to those without.
+
+Next, we aimed to quantify the relationship between Ramadan and voting behavior by developing a simple linear model. To estimate this model, we introduced a new variable, "Ramadan," which indicated whether an election occurred within 90 days of the start of Ramadan, and thus was theoretically influenced by it. This process also provided insights into the cyclical nature of Ramadan and how its timing shifts from year to year. The model revealed that all political parties experienced an increase in their voting share during Ramadan. However, due to the limited number of elections analyzed, it was not possible to confidently interpret the results as causal. Other events occurring in the same year as the elections could have also influenced the voting outcomes of political parties and as consequence biased the model. 
+
+**<span style="color: orange;">Exercise 3</span>**: To address the issue identified in Exercise 2, we introduced the Differences-in-Differences (DiD) approach. We began with a general explanation of the method and how it can solve the problems highlighted in the exercise before. Subsequently, we calculated the DiD estimator step by step manually. In the end, the estimator for right-wing parties was 0.57, suggesting that during Ramadan, municipalities with a mosque experienced an increase of approximately 0.57 percentage points in the right-wing voting share.
+
+**<span style="color: orange;">Exercise 4</span>**: After learning about the Differences-in-Differences (DiD) approach and calculating it manually, we applied it to the other political parties in our data set. To streamline this process, we used a simple linear model to replicate the earlier results. This also allowed us to introduce fixed effects into our models later on.
+
+In the initial model, we observed that both right- and left-wing parties had positive correlations with the interaction term between Ramadan and mosque presence, while the established parties and voter turnout showed negative coefficients. 
+
+**<span style="color: orange;">Exercise 5</span>**: We then introduced various types of fixed effects to the model, focusing exclusively on left-wing parties to narrow the scope of the exercise. We began by incorporating time-invariant municipality fixed effects, which, as expected, had a significant impact on the mosque variable. Next, we added an interaction term between municipality and election type to account for all combinations of municipalities and the two election types. Finally, we introduced time-varying fixed effects through the election date.
+
+This addition helped us understand why fixed effects have a special role in Differences-in-Differences (DiD) approaches. The Ramadan variable was completely absorbed by the time-varying fixed effects, which is expected in a DiD framework because these effects explain the variation previously attributed to the pre- and post-phase variable. Similarly, in a typical DiD approach, municipality fixed effects would be expected to absorb the treatment or control group dummy. Although these fixed effects significantly influenced the variable, a full absorption was not observed.
+
+We discovered this was due to changes in the number of mosques over time, which is somewhat atypical for a DiD approach, where the groups usually remain constant throughout the experiment.
+
+**<span style="color: orange;">Exercise 6</span>**: In this chapter, we examined municipality-specific characteristics and their changes over time. We discovered that some variables were not fixed, which posed a challenge for our fixed effects model, as it assumes these variables remain constant over time. To address this issue, we included these variables as control variables in our model. However, we did not observe significant changes in the estimators, leading us to the suggestion that our estimates are largely independent of the municipality characteristics included as control variables.
+
+**<span style="color: orange;">Exercise 7</span>**: We concluded the main analysis by applying our final Differences-in-Differences (DiD) model with fixed effects and additional municipality-level controls to all four party groups. For both right-wing and left-wing parties, we observed a positive effect, suggesting that increased minority salience leads to heightened election outcomes in municipalities with a mosque. In contrast, for established parties and voter turnout, we observed a negative effect. The negative impact on established parties seems intuitive, as the gains observed for right- and left-wing parties must originate from somewhere, likely at the expense of traditional parties.
+
+**<span style="color: orange;">Exercise 8</span>**: This exercise was divided into three individual parts. First, we incorporated dynamic effects into our regression model by adjusting the definition of the Ramadan variable, varying the 90-day window. We observed that as the distance from Ramadan increased, the impact of our estimators diminished, which is consistent with intuitive expectations. 
+
+In part two, we analyzed the Twitter activity of the right-wing party Alternative für Deutschland (AfD) and the left-wing party Die Linke. One notable finding was the generally higher level of Twitter activity by the AfD compared to Die Linke. Additionally, AfD’s tweet volume spiked significantly before and shortly after Ramadan, followed by a sharp decline, while Die Linke exhibited a more constant and steady pattern with only a slight increase.
+
+Finally, in part three, we developed a simple linear model to assess the effect of Ramadan on anti-Muslim offenses. The coefficient of this model was positive, around 4 percentage points, suggesting an increased likelihood of politically motivated crimes within 90 days after the start of Ramadan.
+
+## Exercise 10 -- Appendix
+
+### Data
+
+* The main data set for this problem set, NRW_final.rds, was refined by removing variables that were not necessary for the analysis. Of the original 45 variables, only 15 were retained for this problem set. Additionally, the data set is now stored in an RDS file for easier use. 
+
+* The data set parties.rds was manually created and replicates the results of Table A2 from the original paper.
+
+* The data set NRW_statistics.rds was also manually created and contains descriptive statistics for the NRW_final.rds data set. It was designed to save the user from repetitive coding exercises. This data set is used to replicate Table A3 from the original paper.
+
+* The data set Ramadan_election.rds was manually created to generate Figure 3 from the original paper.
+
+* The data set NRWcoord.dta was modified by dropping the top row (which contained no data) and renaming the column headers. Additionally, it is now stored in an RDS file.
+
+* The data set NRWdb.dta was updated by renaming the column headers and is now stored in an RDS file.
+
+* The data set google_muslim.dta was modified by removing four of the eight variables that were not relevant for the analysis. It is now also stored in an RDS file.
+
+### Results
+
+During the replication of the original paper, I encountered some discrepancies in the results:
+
+* The descriptive statistics table in Exercise 2 shows identical means and standard deviations for the complete dataset. However, the treatment and control group sizes differ. In my reproduction, the number of observations for the treatment group is n=522 (Original: n=954), and for the control group is n=6606 (Original: n=6174). Naturally, these differences result in variations in the calculated means and standard deviations for the included variables.
+
+* In Exercise 2, where the first linear model estimating the effect of Ramadan on election outcomes is created, the estimators differ significantly from those in the original paper. For right-wing parties, we estimated a coefficient of 0.768 (Original: 0.7044); for left-wing parties, our estimate was 1.383 (Original: 1.2654); for established parties, the estimate was 0.069 (Original: -3.4665); and for voter turnout, it was 2.189 (Original: -1.5358). What’s particularly unusual is that the estimators for the following and more advanced models in the Exercises 5 to 7 align closely with the results of the original paper.
+
+* In Exercise 4, some minor differences in the estimators are observable. For the DiD estimator in the problem set, we estimated a coefficient of 0.571 (Original: 0.5253) for right-wing parties, 1.296 (Original: 1.2125) for left-wing parties, -1.916 (Original: -4.4447) for established parties, and 0.297 (Original: -2.3667) for voter turnout. Compared to the discrepancies observed in Exercise 2, these differences are relatively minor. However, it is notable that the deviations are significantly larger for the established parties and voter turnout.
+
+* In Exercise 7, where we developed the models using the final specification, the results from this replication are identical to those reported in the original paper.
+
+## Exercise 11 -- References
+
+### Bibliography
+
+* Bundeszentrale für politische Bildung (2024, 27. December). Nationaldemokratische Partei Deutschlands (NPD). bpb.de. https://www.bpb.de/themen/rechtsextremismus/dossier-rechtsextremismus/500796/nationaldemokratische-partei-deutschlands-npd/
+
+* Bundeszentrale für politische Bildung (2024, 27. December). Kommunistische Partei Deutschlands (KPD). bpb.de. https://www.bpb.de/kurz-knapp/lexika/politiklexikon/17728/kommunistische-partei-deutschlands-kpd/
+
+* Bundeszentrale für politische Bildung (2024, 27. December). Etappen der Parteigeschichte der AfD | Parteien in Deutschland | bpb.de. bpb.de. https://www.bpb.de/themen/parteien/parteien-in-deutschland/afd/273130/etappen-der-parteigeschichte-der-afd/
+
+* Bundeszentrale für politische Bildung (2024, 27. December). Der Erste Golfkrieg (1980-1988). bpb.de. https://www.bpb.de/kurz-knapp/hintergrund-aktuell/212301/der-erste-golfkrieg-1980-1988/
+
+* Brandt, M. (2024, 16. December). Wie schneiden die Parteien in den Sonntagsfragen ab? Statista Daily Data. https://de.statista.com/infografik/7930/sonntagsfrage-bundestagswahl/
+
+* ChatGPT was used to correct spelling and grammar mistakes, as well as to improve the readability and structure of the text.
+
+* Colussi, T., Isphording, I. E. & Pestel, N. (2021). Minority Salience and Political Extremism. American Economic Journal Applied Economics, 13(3), 237–271. https://doi.org/10.1257/app.20190703
+
+* Landeszentrale für politische Bildung Nordrhein-Westfalen. (2021, 23. November). Geschichte der Zuwanderung in NRW. https://www.politische-bildung.nrw.de/veranstaltungen/aktuelle-veranstaltungen/details/event/geschichte-der-zuwanderung-in-nrw-2021-11-23
+
+* Irizarry, R. A. (o. D.). Chapter 8 ggplot2 | Introduction to Data Science. https://rafalab.dfci.harvard.edu/dsbook/ggplot2.html
+
+* Jung, H. (2009, March). Die Finanz- und Wirtschaftskrise aus Sicht der Wähler (Konrad-Adenauer-Stiftung, Hrsg.). https://www.kas.de/documents/252038/253252/7_dokument_dok_pdf_15965_1.pdf/69d062cf-5e95-a24c-8fe9-15dcea7cb510?version=1.0&t=1539662561702
+
+* tagesschau (2024, 1. September). Landtagswahl Thüringen 2024 - Ergebnisse und Analysedaten. tagesschau.de. https://www.tagesschau.de/wahl/archiv/2024-09-01-LT-DE-TH/
+
+* IT.NRW (2024, 29. April). 3,3 Millionen Menschen waren 2023 armutsgefährdet. (o. D.). https://www.it.nrw/armutsgefaehrdung-in-nrw
+
+* Pfäfflin P. (2024, 14. March). Eigentor für AfD Esslingen? „Zombies“ bei „deutschem“ Grillfest. SWR Aktuell. https://www.swr.de/swraktuell/badenwuerttemberg/stuttgart/afd-esslingen-post-grillfest-100.html 
+
+* Bundeskriminalamt (2024, 21. May). Politisch motivierte Kriminalität in Deutschland erreicht neuen Höchststand.  https://www.bka.de/DE/Presse/Listenseite_Pressemitteilungen/2024/Presse2024/240521_PM_Fallzahlen_PMK2023.html
+
+* Rieber, A. (2022). Vertiefung Kausalität. https://projektkurs-data-science-ulm2122.netlify.app/slides/dag_video.pdf
+
+* Schairer, F., Possoch, D. & Feininger, A. (2024, 15. June). Europawahl-Rechtsruck: Warum wählen junge Leute AfD? BR24. https://www.br.de/nachrichten/deutschland-welt/europawahl-rechtsruck-warum-waehlen-junge-leute-afd,UFaES3P
+
+* Statista. (2024, May). Number of anti-Semitic offenses recorded by the police in Germany 2001-2023. https://www.statista.com/statistics/961796/anti-semitic-offences-recorded-by-the-police-in-germany/
+
+* Süddeutsche Zeitung (2022, 12. July). Kapitol-Sturm: Trump mobilisierte rechte Gruppen mit Tweet. Süddeutsche.de. https://www.sueddeutsche.de/politik/usatrump-kapitol-1.5620137 
+
+* Verfassungsschutz Nordrhein-Westfalen. (2015, May). Verfassungsschutzbericht des Landes Nordrhein-Westfalen über das Jahr 2014 (Ministerium für Inneres und Kommunales des Landes Nord rhein-Westfalen, Hrsg.). https://www.land.nrw/sites/default/files/asset/document/vsbericht_2014_final.pdf 
+
+* Wooldridge, J. M. (2001). Econometric Analysis of Cross Section and Panel Data. 
+
+* Zhu, H. (2024, 23. January). Create Awesome HTML Table with knitr::kable and kableExtra. https://cran.rproject.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html 
+
+### R Packages
+
+* Barrett, M. (2024). ggdag: Analyze and Create Elegant Directed Acyclic Graphs. R package version 0.2.13. URL: https://cran.r-project.org/web/packages/ggdag/index.html
+
+* Gaure, S. (2024). lfe: Linear Group Fixed Effects. R package version 3.1.0. URL: https://cran.r-project.org/web/packages/lfe/index.html 
+
+* Hlavac, M. (2022). stargazer: Well-Formatted Regression and Summary Statistics Tables. R package version 5.2.3. URL: https://cran.r-project.org/web/packages/stargazer/index.html
+
+* Kranz, S. (2020). RTutor: Interactive R Problem Sets. R package version 2020.11.25. URL: https://github.com/skranz/RTutor 
+
+* Kassambara, A. (2023). ggpubr: ‘ggplot2’ Based Publication Ready Plots. R package version 0.6.0. URL: https://cran.r-project.org/web/packages/ggpubr/index.html 
+
+* Textor et al. (2023). dagitty: Graphical Analysis of Structural Causal Models. R package version 0.3-4. URL: https://cran.r-project.org/web/packages/dagitty/index.html
+
+* Wickham et al. (2024). ggplot2: Create Elegant Data Visualisations Using the Grammar of Graphics. R package version 3.5.1. URL: https://cran.r-project.org/web/packages/ggplot2/index.html
+
+* Wickham et al. (2023). dplyr: A Grammar of Data Manipulation. R package version 1.1.4. URL: https://cran.r-project.org/web/packages/dplyr/index.html 
+
+* Wickham et al. (2023). tidyverse: Easily Install and Load the ‘Tidyverse’. R package version 2.0.0. URL: https://cran.r-project.org/web/packages/tidyverse/index.html 
+
+* Wickham et al. (2023). haven: Import and Export ‘SPSS’, ‘Stata’ and ‘SAS’ Files. R package version 2.5.4. URL: https://cran.r-project.org/web/packages/haven/index.html
+
+* Zhu et al. (2024). kableExtra: Construct Complex Table with ‘kable’ and Pipe Syntax. R package version 1.4.0. URL: https://cran.r-project.org/web/packages/kableExtra/index.html
+
+### Data
+
+* The data used to create this problem set and replicate the results of the underlying paper can be accessed through this link: https://www.openicpsr.org/openicpsr/project/118642/version/V1/view
+
+* The Difference-in-Differences (DiD) figure presented in Exercise 5 was created by myself. 
